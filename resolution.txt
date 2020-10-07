@@ -1,0 +1,4 @@
+images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__300_sensors/[-0.3173 0.0000 0.0000]__[0.3173 0.0000 0.0000] 0.7271984341182196
+images/Orthogonal_dipoles/Symmetric_off_center/2_dipoles__300_sensors/[-0.3173 1.0000 0.0000]__[0.3173 1.0000 0.0000] 0.7298451161693092
+images/Parallel_dipoles/Symmetric_around_0/2_dipoles__300_sensors/[-0.4843 0.0000 0.0000]__[0.4843 0.0000 0.0000] 0.7215735789436164
+images/Parallel_dipoles/Symmetric_off_center/2_dipoles__300_sensors/[-0.4843 1.0000 0.0000]__[0.4843 1.0000 0.0000] 0.7279047102029939

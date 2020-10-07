@@ -6,7 +6,8 @@ from PIL import Image
 import os
 
 def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
-    directory = 'images/'+subdir+'/'+subsubdir+'/{}_dipoles__{}_sensors'.format(len(dipole_pos),N_sensors)
+    folder = 'C:/python/Master (Fishbowl)/class_time_reversal/images'
+    directory = folder+'/'+subdir+'/'+subsubdir+'/{}_dipoles__{}_sensors'.format(len(dipole_pos),N_sensors)
     try:
         names = os.listdir(directory)
     except:
@@ -24,12 +25,13 @@ def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
         return False
 
 def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300):
-    names = os.listdir('images')
+    folder = 'C:/python/Master (Fishbowl)/class_time_reversal/images'
+    names = os.listdir(folder)
 
     if subdir not in names:
-        os.mkdir('images/'+subdir)
+        os.mkdir(folder+'/'+subdir)
 
-    os.chdir('images/'+subdir)
+    os.chdir(folder+'/'+subdir)
 
     names = os.listdir()
 
@@ -55,7 +57,7 @@ def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300):
     names = os.listdir()
     if dipoles in names:
         print(dipoles+' already in directory')
-        os.chdir('C:\python\Master (Fishbowl)\class_time_reversal')
+        # os.chdir('C:/python/Master (Fishbowl)/class_time_reversal')
         return
     else:
         os.mkdir(dipoles)
@@ -98,15 +100,26 @@ for i, pol in enumerate(polarization):
     subsubdir = ['Symmetric_around_0', 'Symmetric_off_center']
 
     for j in range(len(subsubdir)):
-        dist = np.linspace(0.2*lambda_0,1*lambda_0,128)
-        for num in dist:
-            x = num/2
-            dipole_pos = np.array([[-x,j*lambda_0,0],[x,j*lambda_0,0]])
+        if subdir == 'Orthogonal_dipoles':
+            dist = np.linspace(0.6*lambda_0,0.7*lambda_0,30)
+            for num in dist:
+                x = num/2
+                dipole_pos = np.array([[-x,j*lambda_0,0],[x,j*lambda_0,0]])
 
-            if check_directory(subdir,subsubdir[j],dipole_pos,N_sensors) == True:
-                continue
+                if check_directory(subdir,subsubdir[j],dipole_pos,N_sensors) == True:
+                    continue
 
-            reconstruct_image(dipole_pos,pol,subdir,subsubdir[j], FoV)
+                reconstruct_image(dipole_pos,pol,subdir,subsubdir[j], FoV)
+            else:
+                dist = np.linspace(0.9*lambda_0,1*lambda_0,30)
+                for num in dist:
+                    x = num/2
+                    dipole_pos = np.array([[-x,j*lambda_0,0],[x,j*lambda_0,0]])
+
+                    if check_directory(subdir,subsubdir[j],dipole_pos,N_sensors) == True:
+                        continue
+
+                    reconstruct_image(dipole_pos,pol,subdir,subsubdir[j], FoV)
 
 FoV = 16*lambda_0
 
