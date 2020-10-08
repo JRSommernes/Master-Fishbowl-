@@ -1,0 +1,5 @@
+Plott delta function (høyde til intensity minimum delt på minste intensity peak) som funksjon av distanse mellom dipoler
+
+Plott resolution limit som funksjon av antall sensorer
+
+Plott lengde av FoV abberation som funksjon av distanse fra origo

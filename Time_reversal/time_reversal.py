@@ -113,6 +113,9 @@ class Sensor:
         I = np.identity(3)
         G = (expr_1*RR_hat + expr_2*I).T
 
+        print(G)
+        exit()
+
         self.E.append(np.dot(G,pol))
 
     def reconstruction(self,N,xx,yy,zz):
@@ -124,6 +127,4 @@ class Sensor:
             E_tot[0] += np.conj(E[0]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
             E_tot[1] += np.conj(E[1]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
             E_tot[2] += np.conj(E[2]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
-            #*np.exp(-1j*omega*self.time_lag[i])
-
         return E_tot

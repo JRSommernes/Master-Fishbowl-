@@ -1,0 +1,4 @@
+C:\python\Master (Fishbowl)\class_time_reversal\images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__300_sensors/[-0.3161 0.0000 0.0000]__[0.3161 0.0000 0.0000] 0.7306976468994967
+C:\python\Master (Fishbowl)\class_time_reversal\images/Orthogonal_dipoles/Symmetric_off_center/2_dipoles__300_sensors/[-0.3173 1.0000 0.0000]__[0.3173 1.0000 0.0000] 0.7298451161693092
+C:\python\Master (Fishbowl)\class_time_reversal\images/Parallel_dipoles/Symmetric_around_0/2_dipoles__300_sensors/[-0.4843 0.0000 0.0000]__[0.4843 0.0000 0.0000] 0.7215735789436164
+C:\python\Master (Fishbowl)\class_time_reversal\images/Parallel_dipoles/Symmetric_off_center/2_dipoles__300_sensors/[-0.4843 1.0000 0.0000]__[0.4843 1.0000 0.0000] 0.7279047102029939
