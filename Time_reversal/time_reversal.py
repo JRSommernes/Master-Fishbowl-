@@ -1,7 +1,7 @@
 import numpy as np
 from constants import *
 import matplotlib.pyplot as plt
-from numba import jit, void
+from numba import jit, void, cuda
 import sys
 
 class Microscope:
@@ -64,7 +64,13 @@ class Microscope:
                 sys.stdout.write('\r')
                 sys.stdout.write("[%-100s] %d%%" % ('='*done, done))
                 sys.stdout.flush()
-            self.E_tot += sensor.reconstruction(self.reconstruction_size,xx,yy,zz)
+            k_x = k_0*sensor.x/sensor.radius
+            k_y = k_0*sensor.y/sensor.radius
+            k_z = k_0*sensor.z/sensor.radius
+            E_tot = np.zeros(([3,self.reconstruction_size,self.reconstruction_size,self.reconstruction_size]),dtype=np.complex128)
+            self.E_tot += sensor.reconstruction(self.reconstruction_size,xx,yy,zz,k_x,k_y,k_z,np.array(sensor.E),E_tot)
+
+            # self.E_tot += sensor.reconstruction(self.reconstruction_size,xx,yy,zz)
         print("\n")
 
         self.I = np.sqrt((np.abs(self.E_tot[0])**2)+(np.abs(self.E_tot[1])**2)+(np.abs(self.E_tot[2])**2))
@@ -113,18 +119,25 @@ class Sensor:
         I = np.identity(3)
         G = (expr_1*RR_hat + expr_2*I).T
 
-        print(G)
-        exit()
+        self.E.append(G@pol)
 
-        self.E.append(np.dot(G,pol))
-
-    def reconstruction(self,N,xx,yy,zz):
-        k_x = k_0*self.x/self.radius
-        k_y = k_0*self.y/self.radius
-        k_z = k_0*self.z/self.radius
-        E_tot = np.zeros(([3,N,N,N]),dtype=np.complex128)
-        for i,E in enumerate(self.E):
+    @staticmethod
+    @jit(nopython=True,parallel=True)
+    # @jit(target ="cuda")
+    def reconstruction(N,xx,yy,zz,k_x,k_y,k_z,E,E_tot):
+        for i,E in enumerate(E):
             E_tot[0] += np.conj(E[0]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
             E_tot[1] += np.conj(E[1]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
             E_tot[2] += np.conj(E[2]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
         return E_tot
+
+    # def reconstruction(self,N,xx,yy,zz):
+    #     k_x = k_0*self.x/self.radius
+    #     k_y = k_0*self.y/self.radius
+    #     k_z = k_0*self.z/self.radius
+    #     E_tot = np.zeros(([3,N,N,N]),dtype=np.complex128)
+    #     for i,E in enumerate(self.E):
+    #         E_tot[0] += np.conj(E[0]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
+    #         E_tot[1] += np.conj(E[1]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
+    #         E_tot[2] += np.conj(E[2]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
+    #     return E_tot

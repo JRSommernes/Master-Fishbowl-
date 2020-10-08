@@ -6,7 +6,7 @@ from PIL import Image
 import os
 
 def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
-    folder = 'C:/python/Master (Fishbowl)/class_time_reversal/images'
+    folder = 'C:/Python/Master (Fishbowl)/images'
     directory = folder+'/'+subdir+'/'+subsubdir+'/{}_dipoles__{}_sensors'.format(len(dipole_pos),N_sensors)
     try:
         names = os.listdir(directory)
@@ -24,8 +24,8 @@ def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
     else:
         return False
 
-def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300):
-    folder = 'C:/python/Master (Fishbowl)/class_time_reversal/images'
+def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300,N_recon=100):
+    folder = 'C:/Python/Master (Fishbowl)/images'
     names = os.listdir(folder)
 
     if subdir not in names:
@@ -62,11 +62,11 @@ def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300):
     else:
         os.mkdir(dipoles)
 
-    for i in range(N_reconstruction):
+    for i in range(N_recon):
         im = Image.fromarray(I[:,:,i].astype(np.float64))
         im.save(dipoles+'/{}.tiff'.format(i))
 
-    plt.imshow(I[:,:,N_reconstruction//2],extent=(-FoV/2,FoV/2,FoV/2,-FoV/2))
+    plt.imshow(I[:,:,N_recon//2],extent=(-FoV/2,FoV/2,FoV/2,-FoV/2))
     plt.xlabel('x')
     plt.ylabel('y')
     plt.colorbar()
@@ -76,7 +76,7 @@ def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300):
     plt.cla()   # Clear axis
     plt.clf()   # Clear figure
 
-    os.chdir('C:\python\Master (Fishbowl)\class_time_reversal')
+    os.chdir('C:/Python/Master (Fishbowl)')
 
 def reconstruct_image(pos, pol, subdir, subsubdir, FoV, N_sen = 300, N_recon = 100):
     microscope = Microscope(N_sen,N_recon,FoV)
@@ -85,65 +85,50 @@ def reconstruct_image(pos, pol, subdir, subsubdir, FoV, N_sen = 300, N_recon = 1
     microscope.make_dipoles(pos,pol)
     microscope.reconstruct_image(N_recon)
 
-    saveimage(microscope.I,pos,subdir,subsubdir,FoV,N_sen)
+    saveimage(microscope.I,pos,subdir,subsubdir,FoV,N_sen,N_recon)
 
 
-# N_sensors = 300
-N_reconstruction = 300
+N_reconstruction = 100
 FoV = 4*lambda_0
 
-for N_sensors in [300,400,500]:
+for N_sensors in [100,200,300,400,500,600,700]:
     subdirect = ['Orthogonal_dipoles','Parallel_dipoles']
     polarization = np.array([[[1,0,0],[0,0,1]],[[1,0,0],[1,0,0]]])
     for i, pol in enumerate(polarization):
         subdir = subdirect[i]
-
-        # subsubdir = ['Symmetric_around_0', 'Symmetric_off_center']
-        subsubdir = ['Symmetric_around_0']
-
+        subsubdir = ['Symmetric_around_0', 'Symmetric_off_center']
         for j in range(len(subsubdir)):
             if subdir == 'Orthogonal_dipoles':
-                dist = np.linspace(0.6*lambda_0,0.65*lambda_0,15)
-                for num in dist:
-                    x = num/2
-                    dipole_pos = np.array([[-x,j*lambda_0,0],[x,j*lambda_0,0]])
+                dist = np.linspace(0.6*lambda_0,0.7*lambda_0,20)
+            else:
+                dist = np.linspace(0.9*lambda_0,1.0*lambda_0,20)
+            for num in dist:
+                x = num/2
+                dipole_pos = np.array([[-x,j*lambda_0,0],[x,j*lambda_0,0]])
+                if check_directory(subdir,subsubdir[j],dipole_pos,N_sensors) == True:
+                    continue
+                reconstruct_image(dipole_pos,pol,subdir,subsubdir[j], FoV, N_sen=N_sensors, N_recon=N_reconstruction)
 
-
-                    if check_directory(subdir,subsubdir[j],dipole_pos,N_sensors) == True:
-                        continue
-
-                    reconstruct_image(dipole_pos,pol,subdir,subsubdir[j], FoV)
-                else:
-                    dist = np.linspace(0.95*lambda_0,1*lambda_0,15)
-                    for num in dist:
-                        x = num/2
-                        dipole_pos = np.array([[-x,j*lambda_0,0],[x,j*lambda_0,0]])
-
-                        if check_directory(subdir,subsubdir[j],dipole_pos,N_sensors) == True:
-                            continue
-
-                        reconstruct_image(dipole_pos,pol,subdir,subsubdir[j], FoV)
-
-FoV = 16*lambda_0
-
-subdirect = ['Single dipole']
-polarization = np.array([[[1,0,0]]])
-sensor_ammount = np.array([300,400,500,600,700,800,900,1000])
-for m in sensor_ammount:
-    for i, pol in enumerate(polarization):
-        subdir = subdirect[i]
-
-        subsubdir = ['FoV edge test']
-
-        for j in range(len(subsubdir)):
-            r = np.linspace(0*lambda_0,5*lambda_0,5)
-            for k in r:
-                for l in r:
-                    dipole_pos = np.array([[k,l,0]])
-                    if check_directory(subdir,subsubdir[j],dipole_pos,m) == True:
-                        continue
-
-                    reconstruct_image(dipole_pos,pol,subdir,subsubdir[j],FoV,N_sen = m)
+# FoV = 16*lambda_0
+#
+# subdirect = ['Single dipole']
+# polarization = np.array([[[1,0,0]]])
+# sensor_ammount = np.array([300,400,500,600,700,800,900,1000])
+# for m in sensor_ammount:
+#     for i, pol in enumerate(polarization):
+#         subdir = subdirect[i]
+#
+#         subsubdir = ['FoV edge test']
+#
+#         for j in range(len(subsubdir)):
+#             r = np.linspace(0*lambda_0,5*lambda_0,5)
+#             for k in r:
+#                 for l in r:
+#                     dipole_pos = np.array([[k,l,0]])
+#                     if check_directory(subdir,subsubdir[j],dipole_pos,m) == True:
+#                         continue
+#
+#                     reconstruct_image(dipole_pos,pol,subdir,subsubdir[j],FoV,N_sen = m)
 
 
 
