@@ -89,17 +89,19 @@ def reconstruct_image(pos, pol, subdir, subsubdir, FoV, N_sen = 300, N_recon = 1
     saveimage(microscope.I,pos,subdir,subsubdir,FoV,N_sen,N_recon)
 
 
-def coverge_resolution_limit(subdirect,subsubdir,N_sensors,FoV,N_reconstruction):
+def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
+    #DO THIS BETTER
     carryOn = True
+    path = 'C:/Python/Master (Fishbowl)/Images/'+subdir+'/'+subsubdir+'/2_dipoles__{}_sensors'.format(N_sensors)
     if subsubdir == 'Symmetric_around_0':
         offset = 0
     else:
         offset = 1
-    if subdirect == 'Orthogonal_dipoles':
+    if subdir == 'Orthogonal_dipoles':
          polarization = np.array([[[1,0,0],[0,0,1]]])
          dist_1 = 0.62*lambda_0
          dist_2 = 0.64*lambda_0
-    elif subdirect == 'Parallel_dipoles':
+    elif subdir == 'Parallel_dipoles':
         polarization = np.array([[[1,0,0],[1,0,0]]])
         dist_1 = 0.96*lambda_0
         dist_2 = 0.98*lambda_0
@@ -117,8 +119,43 @@ def coverge_resolution_limit(subdirect,subsubdir,N_sensors,FoV,N_reconstruction)
     reconstruct_image(dipole_pos_1,pol,subdir,subsubdir[j], FoV, N_sen=N_sensors, N_recon=N_reconstruction)
     reconstruct_image(dipole_pos_2,pol,subdir,subsubdir[j], FoV, N_sen=N_sensors, N_recon=N_reconstruction)
 
+    dipoles_1 = ''
+    for i in range(len(dipole_pos_1)):
+        if i != 0:
+            dipoles_1 += '__'
+        dipoles_1 += '[{0:.6f} {1:.6f} {2:.6f}]'.format(dipole_pos_1[i][0]/lambda_0,dipole_pos_1[i][1]/lambda_0,dipole_pos_1[i][2]/lambda_0)
+
+    dipoles_2 = ''
+    for i in range(len(dipole_pos_2)):
+        if i != 0:
+            dipoles_2 += '__'
+        dipoles_2 += '[{0:.6f} {1:.6f} {2:.6f}]'.format(dipole_pos_2[i][0]/lambda_0,dipole_pos_2[i][1]/lambda_0,dipole_pos_2[i][2]/lambda_0)
+
     while carryOn:
-        
+        stack_1 = np.zeros((N_reconstruction,N_reconstruction,N_reconstruction))
+        stack_2 = np.zeros((N_reconstruction,N_reconstruction,N_reconstruction))
+        for i in range(z):
+            stack_1[:,:,i] = Image.open(path+'/'+dipoles_1+'/'+'{}.tiff'.format(i))
+            stack_2[:,:,i] = Image.open(path+'/'+dipoles_2+'/'+'{}.tiff'.format(i))
+
+        line_1 = stack_1[np.where(stack_1==np.amax(stack_1))[0][0],:,N_reconstruction//2]
+        line_2 = stack_2[np.where(stack_2==np.amax(stack_2))[0][0],:,N_reconstruction//2]
+        maxima_1, maxima_idx_1, minima_1, minima_idx_1 = find_extremum(line_1)
+        maxima_2, maxima_idx_2, minima_2, minima_idx_2 = find_extremum(line_2)
+
+        if 0.8 <= maxima[0]/maxima[1] <= 1.2:
+            background = np.amin(line)
+            diff = ((minima-background)/(np.amin(maxima)-background))
+            if diff <= 0.735:
+                if plot_extrema == True:
+                    plt.plot(line)
+                    plt.plot(maxima_idx,maxima,'*',c='g')
+                    plt.plot(minima_idx,minima,'*',c='r')
+                    plt.show()
+                f.write(path+'/'+element+' ')
+                f.write(str(diff)+'\n')
+                print(path+'/'+element+' '+str(diff))
+                break
 
 
 
