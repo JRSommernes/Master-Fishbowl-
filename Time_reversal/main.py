@@ -92,7 +92,7 @@ def reconstruct_image(pos, pol, subdir, subsubdir, FoV, N_sen = 300, N_recon = 1
 
 def find_modified_rayleigh(stack):
     x,y,z = np.shape(stack)
-    line = stack[np.where(stack==np.amax(stack))[0][0],:,z//2]
+    line = stack[np.where(stack==np.amax(stack))[0][0],:,np.where(stack==np.amax(stack))[2][0]]
     maxima, maxima_idx, minima, minima_idx = find_extremum(line)
 
     background = np.amin(line)
