@@ -22,12 +22,11 @@ phi_2, theta_2 = np.pi, np.pi/4
 polarizations = np.array([[np.cos(phi_1)*np.sin(theta_1),np.sin(phi_1)*np.sin(theta_1),np.cos(theta_1)]\
                 ,[np.cos(phi_2)*np.sin(theta_2),np.sin(phi_2)*np.sin(theta_2),np.cos(theta_2)]])
 
-t = np.linspace(0,2*np.pi/omega,1000)
 
 sensors = make_sensors(N_sensors,sensor_radius)
-E_sensors = sensor_field_time(sensors,dipoles,polarizations,N_sensors,k_0,t,omega)
+E_sensors = sensor_field(sensors,dipoles,polarizations,N_sensors,k_0)
 
-print(E_sensors[0,:,0])
+print(E_sensors[0,:])
 
 I = np.sqrt(np.sum(E_sensors**2,axis=1))
 

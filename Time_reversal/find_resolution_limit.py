@@ -117,5 +117,5 @@ def find_resolution_limit(paths,plot_extrema=False):
 
 
 
-paths = find_direcories()
-find_resolution_limit(paths)
+# paths = find_direcories()
+# find_resolution_limit(paths)
