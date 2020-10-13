@@ -63,16 +63,16 @@ def find_extremum(line):
     return maxima,maxima_idx,minima,minima_idx
 
 def find_direcories():
-    directory = os.listdir('C:\python\Master (Fishbowl)\class_time_reversal\images')
+    directory = os.listdir('C:/Python/Master (Fishbowl)/Images')
     paths = []
     for dir in directory:
         if dir != "Single dipole":
-            subdirectory = os.listdir('C:\python\Master (Fishbowl)\class_time_reversal\images/'+dir)
+            subdirectory = os.listdir('C:/Python/Master (Fishbowl)/Images/'+dir)
             for subdir in subdirectory:
-                subsubdirectory = os.listdir('C:\python\Master (Fishbowl)\class_time_reversal\images/'+dir+'/'+subdir)
+                subsubdirectory = os.listdir('C:/Python/Master (Fishbowl)/Images/'+dir+'/'+subdir)
                 for subsubdir in subsubdirectory:
 
-                    paths.append('C:\python\Master (Fishbowl)\class_time_reversal\images/'+dir+'/'+subdir+'/'+subsubdir)
+                    paths.append('C:/Python/Master (Fishbowl)/Images/'+dir+'/'+subdir+'/'+subsubdir)
 
                     # element = os.listdir('images/'+dir+'/'+subdir+'/'+subsubdir)
                     # for ele in element:

@@ -1,8 +1,15 @@
 import numpy as np
 from constants import *
 import matplotlib.pyplot as plt
-from numba import jit, void, cuda
+from numba import jit, void, cuda, vectorize, guvectorize
 import sys
+
+# TPB = 3
+#
+# @cuda.jit
+# def fast_conj(E,k_xx,k_yy,k_zz,E_tot):
+#     sE = cuda.shared.array(shape=(TPB, TPB), dtype=float32)
+#     sxx = cuda.shared.array(shape=(TPB, TPB), dtype=float32)
 
 class Microscope:
     def __init__(self,N_sensors,N_reconstruction,FoV):
@@ -45,7 +52,7 @@ class Microscope:
 
     def reconstruct_image(self,size):
         self.record_sensors()
-        self.E_tot = np.zeros((3,size,size,size),dtype=np.complex128)
+        self.E_tot = np.zeros((len(self.dipoles),3,size,size,size),dtype=np.complex128)
 
         x = np.linspace(-self.FoV/2,self.FoV/2,self.reconstruction_size)
         y = np.linspace(-self.FoV/2,self.FoV/2,self.reconstruction_size)
@@ -67,10 +74,12 @@ class Microscope:
             k_x = k_0*sensor.x/sensor.radius
             k_y = k_0*sensor.y/sensor.radius
             k_z = k_0*sensor.z/sensor.radius
-            E_tot = np.zeros(([3,self.reconstruction_size,self.reconstruction_size,self.reconstruction_size]),dtype=np.complex128)
-            self.E_tot += sensor.reconstruction(self.reconstruction_size,xx,yy,zz,k_x,k_y,k_z,np.array(sensor.E),E_tot)
+            E = np.array(sensor.E)[:,:,np.newaxis,np.newaxis,np.newaxis]
+            self.E_tot += sensor.reconstruction(xx*k_x,yy*k_y,zz*k_z,E)
+        self.E_tot = np.sum(self.E_tot,axis=0)
 
-            # self.E_tot += sensor.reconstruction(self.reconstruction_size,xx,yy,zz)
+
+
         print("\n")
 
         self.I = np.sqrt((np.abs(self.E_tot[0])**2)+(np.abs(self.E_tot[1])**2)+(np.abs(self.E_tot[2])**2))
@@ -122,22 +131,36 @@ class Sensor:
         self.E.append(G@pol)
 
     @staticmethod
-    @jit(nopython=True,parallel=True)
+    # @jit(nopython=True)
+    # @cuda.jit('void(float64[:], float64[:], float64[:], complex128[:])')
     # @jit(target ="cuda")
-    def reconstruction(N,xx,yy,zz,k_x,k_y,k_z,E,E_tot):
-        for i,E in enumerate(E):
-            E_tot[0] += np.conj(E[0]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
-            E_tot[1] += np.conj(E[1]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
-            E_tot[2] += np.conj(E[2]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
+    @vectorize(['complex128(float64, float64, float64, complex128)'],target='parallel')
+    # @guvectorize(["complex128(float64[:,:,:],float64[:,:,:],float64[:,:,:],complex128[:,:,:,:,:])"], "(n,n,n),(n,n,n),(n,n,n),(n,n,n,n,n) -> (n,n,n,n)",target="parallel",nopython=True)
+    def reconstruction(k_xx,k_yy,k_zz,E):
+        E_tot = np.conj(E*np.exp(1j*(k_xx+k_yy+k_zz)))
+        # E_tot = np.sum(E_tot,axis=0)
         return E_tot
 
-    # def reconstruction(self,N,xx,yy,zz):
-    #     k_x = k_0*self.x/self.radius
-    #     k_y = k_0*self.y/self.radius
-    #     k_z = k_0*self.z/self.radius
-    #     E_tot = np.zeros(([3,N,N,N]),dtype=np.complex128)
-    #     for i,E in enumerate(self.E):
-    #         E_tot[0] += np.conj(E[0]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
-    #         E_tot[1] += np.conj(E[1]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
-    #         E_tot[2] += np.conj(E[2]*np.exp(1j*(k_x*xx+k_y*yy+k_z*zz)))
+    # @staticmethod
+    # def reconstruction(k_xx,k_yy,k_zz,E):
+    #     tmp = np.conj(E*np.exp(1j*(k_xx*k_yy+k_zz)))
+    #     tmp = np.sum(tmp,axis=0)
+    #
+    #     E_global_mem = cuda.to_device(E)
+    #     k_xx_global_mem = cuda.to_device(k_xx)
+    #     k_yy_global_mem = cuda.to_device(k_yy)
+    #     k_zz_global_mem = cuda.to_device(k_zz)
+    #     E_tot_global_mem = cuda.device_array((3,100,100,100))
+    #
+    #     threadsperblock = (TPB, 2*TPB, 2*TPB, 2*TPB)
+    #     blockspergrid_x = int(math.ceil(E.shape[0] / threadsperblock[0]))
+    #     blockspergrid_y = int(math.ceil(E.shape[1] / threadsperblock[1]))
+    #     blockspergrid_z = int(math.ceil(E.shape[2] / threadsperblock[2]))
+    #     blockspergrid_k = int(math.ceil(E.shape[3] / threadsperblock[3]))
+    #
+    #     fast_conj[blockspergrid, threadsperblock](E_global_mem, k_xx_global_mem, k_yy_global_mem, k_zz_global_mem, E_tot_global_mem)
+    #     res = E_tot_global_mem.copy_to_host()
+    #
+    #
+    #     exit()
     #     return E_tot
