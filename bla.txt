@@ -4,6 +4,8 @@ Plott resolution limit som funksjon av antall sensorer
 
 Plott lengde av FoV abberation som funksjon av distanse fra origo
 
+odd and een nnuber sensors
+
 
 ________________________________________________________________________________________________________________________________________________________________
 

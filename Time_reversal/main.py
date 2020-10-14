@@ -6,6 +6,8 @@ from PIL import Image
 import os
 from find_resolution_limit import *
 
+from mpl_toolkits.mplot3d import Axes3D
+
 def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
     folder = 'C:/Python/Master (Fishbowl)/images'
     directory = folder+'/'+subdir+'/'+subsubdir+'/{}_dipoles__{}_sensors'.format(len(dipole_pos),N_sensors)
@@ -157,10 +159,11 @@ N_reconstruction = 100
 # N_sensors = 100
 FoV = 4*lambda_0
 
-for N_sensors in [200,400,600,800]:
+for N_sensors in [100,200,400,600,800]:
     coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction)
 
-
+# file = "resolution_1.txt"
+# plot_resolution_limit(file)
 
 
 

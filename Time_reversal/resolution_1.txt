@@ -1,5 +1,5 @@
-C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__100_sensors/[-0.314355 0.000000 0.000000]__[0.314355 0.000000 0.000000] 0.7349655745706047
-C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__200_sensors/[-0.314766 0.000000 0.000000]__[0.314766 0.000000 0.000000] 0.7349087427013183
-C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__400_sensors/[-0.314297 0.000000 0.000000]__[0.314297 0.000000 0.000000] 0.7348786943315949
-C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__600_sensors/[-0.314062 0.000000 0.000000]__[0.314062 0.000000 0.000000] 0.7344196455797766
-C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__800_sensors/[-0.313711 0.000000 0.000000]__[0.313711 0.000000 0.000000] 0.7348554596679517
+C:/Python/Master (Fishbowl)/Images/Parallel_dipoles/Symmetric_around_0/2_dipoles__100_sensors/[-0.482324 0.000000 0.000000]__[0.482324 0.000000 0.000000] 0.7349004281202435
+C:/Python/Master (Fishbowl)/Images/Parallel_dipoles/Symmetric_around_0/2_dipoles__200_sensors/[-0.481543 0.000000 0.000000]__[0.481543 0.000000 0.000000] 0.734897106807049
+C:/Python/Master (Fishbowl)/Images/Parallel_dipoles/Symmetric_around_0/2_dipoles__400_sensors/[-0.480908 0.000000 0.000000]__[0.480908 0.000000 0.000000] 0.7349898771934918
+C:/Python/Master (Fishbowl)/Images/Parallel_dipoles/Symmetric_around_0/2_dipoles__600_sensors/[-0.481250 0.000000 0.000000]__[0.481250 0.000000 0.000000] 0.7333506529423048
+C:/Python/Master (Fishbowl)/Images/Parallel_dipoles/Symmetric_around_0/2_dipoles__800_sensors/[-0.480737 0.000000 0.000000]__[0.480737 0.000000 0.000000] 0.7349974147674103
