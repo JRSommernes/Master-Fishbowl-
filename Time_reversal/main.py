@@ -92,11 +92,12 @@ def reconstruct_image(pos, pol, subdir, subsubdir, FoV, N_sen = 300, N_recon = 1
 
 def find_modified_rayleigh(stack):
     x,y,z = np.shape(stack)
-    line = stack[np.where(stack==np.amax(stack))[0][0],:,np.where(stack==np.amax(stack))[2][0]]
+    line = stack[np.where(stack==np.amax(stack))[0][0],:,z//2]
     maxima, maxima_idx, minima, minima_idx = find_extremum(line)
 
     background = np.amin(line)
     diff = ((minima-background)/(np.amin(maxima)-background))
+
     return diff
 
 def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
@@ -108,12 +109,12 @@ def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
         offset = 1
     if subdir == 'Orthogonal_dipoles':
          polarization = np.array([[1,0,0],[0,0,1]])
-         dist_1 = 0.62*lambda_0
-         dist_2 = 0.64*lambda_0
+         dist_1 = 0.60*lambda_0
+         dist_2 = 0.66*lambda_0
     elif subdir == 'Parallel_dipoles':
         polarization = np.array([[1,0,0],[1,0,0]])
-        dist_1 = 0.96*lambda_0
-        dist_2 = 0.98*lambda_0
+        dist_1 = 0.9*lambda_0
+        dist_2 = 1*lambda_0
 
     x_1 = dist_1/2
     dipole_pos_1 = np.array([[-x_1,offset*lambda_0,0],[x_1,offset*lambda_0,0]])
@@ -125,6 +126,7 @@ def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
     stack_2 = reconstruct_image(dipole_pos_2,polarization,subdir,subsubdir, FoV, N_sen=N_sensors, N_recon=N_reconstruction)
     r_2 = find_modified_rayleigh(stack_2)
 
+
     while carryOn:
         dist = (dist_1+dist_2)/2
         x = dist/2
@@ -133,9 +135,9 @@ def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
         r = find_modified_rayleigh(stack)
 
         err = r - 0.735
+        print(abs(err))
         if abs(err) < 1e-4:
             carryOn = False
-
         if r < 0.735:
             r_2 = r
             x_2 = x
@@ -146,13 +148,16 @@ def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
             dist_1 = dist
 
 
+
+
+
 subdirect = 'Orthogonal_dipoles'
 subsubdirect = 'Symmetric_around_0'
 N_reconstruction = 100
 # N_sensors = 100
 FoV = 4*lambda_0
 
-for N_sensors in [100,200,400,600,800]:
+for N_sensors in [200,400,600,800]:
     coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction)
 
 

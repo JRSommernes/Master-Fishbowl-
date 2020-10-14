@@ -82,7 +82,7 @@ def find_direcories():
     return paths
 
 def find_resolution_limit(paths,plot_extrema=False):
-    f = open("resolution.txt", "w+")
+    f = open("resolution_1.txt", "w+")
     for path in paths:
         elements = os.listdir(path)
         elements = [el for el in elements if not ".tiff" in el]
@@ -116,6 +116,6 @@ def find_resolution_limit(paths,plot_extrema=False):
                 continue
 
 
-
+# 
 # paths = find_direcories()
 # find_resolution_limit(paths)

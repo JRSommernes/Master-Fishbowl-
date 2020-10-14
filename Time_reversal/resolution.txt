@@ -1,5 +1,4 @@
 C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__100_sensors/[-0.3145 0.0000 0.0000]__[0.3145 0.0000 0.0000] 0.7345991716658998
-C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__200_sensors/[-0.3149 0.0000 0.0000]__[0.3149 0.0000 0.0000] 0.7346124145318056
 C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__300_sensors/[-0.3149 0.0000 0.0000]__[0.3149 0.0000 0.0000] 0.7340424526100153
 C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__400_sensors/[-0.3145 0.0000 0.0000]__[0.3145 0.0000 0.0000] 0.7343946111294462
 C:/Python/Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__40_sensors/[-0.3179 0.0000 0.0000]__[0.3179 0.0000 0.0000] 0.7328057606255213
