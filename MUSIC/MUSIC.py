@@ -1,8 +1,9 @@
 import numpy as np
 from numba import jit
 import matplotlib.pyplot as plt
+from scipy.spatial.distance import cdist
 
-@jit(nopython=True, parallel=True)
+# @jit(nopython=True, parallel=True)
 def make_sensors(N_sensors,sensor_radius):
     sensors = np.zeros((N_sensors,3))
     phi = np.pi * (3. - np.sqrt(5.))  # golden angle in radians
@@ -21,7 +22,7 @@ def make_sensors(N_sensors,sensor_radius):
         sensors[i] = [x,y,z]
     return sensors.T
 
-@jit(nopython=True, parallel=True)
+# @jit(nopython=True, parallel=True)
 def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
     # x,y,z = dipole_pos
     # r_p = np.array([sensors[0]-x, sensors[1]-y, sensors[2]-z])
@@ -54,6 +55,63 @@ def sensor_field(sensors,dipoles,polarizations,N_sensors,k_0):
         E_tot += G.dot(polarizations[i])
 
     return E_tot
+
+def reconstruct(E_field):
+    S = np.conjugate(E_field@np.conjugate(E_field).T)
+    M = S.shape[0]
+
+    eigvals,eigvecs = np.linalg.eig(S)
+    mat = np.concatenate((eigvals.real.reshape(M,1),eigvals.imag.reshape(M,1)),axis=1)
+
+    min = np.min(eigvals)
+    min_idx = np.where(eigvals==min)[0][0]
+    dist = cdist(mat,mat)[min_idx]
+
+    noice_idx = np.where(dist<1e-4)[0]
+    N = len(noice_idx)
+    D = len(E_field)-N
+
+    E_N = eigvecs[noice_idx]
+
+    return E_N.T@np.conjugate(E_N)
+
+
+def something(E_field,N_sensors,sensor_radius,dipoles,k_0):
+    X = E_field.reshape((3*len(E_field),1))
+
+    sensors = make_sensors(N_sensors,sensor_radius)
+    G = np.zeros((N_sensors,3,3),dtype=np.complex128)
+    for dipole_pos in dipoles:
+        G += dyadic_green(sensors,dipole_pos,N_sensors,k_0)
+    G = G.reshape((3*N_sensors,3))
+
+    #?????????????????????????????????????????
+    E_N = reconstruct(E_field.reshape(3*N_sensors,1))
+    print((np.conjugate(G).T@E_N@G).shape)
+
+    # tmp = np.array([[np.cos( np.pi)*np.sin(np.pi/4),np.sin( np.pi)*np.sin(np.pi/4),np.cos(np.pi/4)]]).T
+    # print(X-G@tmp)
+
+
+    #NOPE
+    # p = np.linspace(0,2*np.pi,20)
+    # t = np.linspace(-np.pi/2,np.pi/2,15)
+    #
+    # phi,theta = np.meshgrid(p,t)
+    #
+    # a_x = (np.cos(phi)*np.sin(theta)).reshape(len(E_field),1)
+    # a_y = (np.sin(phi)*np.sin(theta)).reshape(len(E_field),1)
+    # a_z = (np.cos(theta)).reshape(len(E_field),1)
+    #
+    # a = np.append(np.append(a_x,a_y,axis=1),a_x,axis=1)
+    #
+    # test = 1/(np.conjugate(a).T@E_N@np.conjugate(E_N).T@a)
+    #
+    # print(test)
+
+
+
+
 
 # def sensor_field_time(sensors,dipoles,polarizations,N_sensors,k_0,t,omega):
 #     E_tot = np.zeros((N_sensors,3,len(t)),dtype=np.complex128)
