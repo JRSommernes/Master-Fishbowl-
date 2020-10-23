@@ -17,7 +17,7 @@ def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
     for k in range(len(dipole_pos)):
         if k != 0:
             dipoles += '__'
-        dipoles += '[{0:.6f} {1:.6f} {2:.6f}]'.format(dipole_pos[k][0]/lambda_0,dipole_pos[k][1]/lambda_0,dipole_pos[k][2]/lambda_0)
+        dipoles += '[{0:.8f} {1:.8f} {2:.8f}]'.format(dipole_pos[k][0]/lambda_0,dipole_pos[k][1]/lambda_0,dipole_pos[k][2]/lambda_0)
 
     if dipoles in names:
         print(dipoles+' already in directory')
@@ -53,7 +53,7 @@ def saveimage(I,dipole_pos,subdir,subsubdir,FoV,N_sensors=300,N_recon=100):
     for i in range(len(dipole_pos)):
         if i != 0:
             dipoles += '__'
-        dipoles += '[{0:.6f} {1:.6f} {2:.6f}]'.format(dipole_pos[i][0]/lambda_0,dipole_pos[i][1]/lambda_0,dipole_pos[i][2]/lambda_0)
+        dipoles += '[{0:.8f} {1:.8f} {2:.8f}]'.format(dipole_pos[i][0]/lambda_0,dipole_pos[i][1]/lambda_0,dipole_pos[i][2]/lambda_0)
 
     names = os.listdir()
     if dipoles in names:
@@ -136,7 +136,7 @@ def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction):
 
         err = r - 0.735
         print(abs(err))
-        if abs(err) < 1e-4:
+        if abs(err) < 1e-5:
             carryOn = False
         if r < 0.735:
             r_2 = r
@@ -157,11 +157,23 @@ N_reconstruction = 100
 # N_sensors = 100
 FoV = 4*lambda_0
 
-for N_sensors in [200,400,600,800]:
+#DONE
+#100,110,120,130,140,150,160,170,180,190,200,250,300,350,400,450,500,550,600,650,700,750,800,101,151,201,251,301,351,401,451,
+for N_sensors in [501,551,601,651,701,751,801]:
     coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction)
 
+subdirect = 'Parallel_dipoles'
+subsubdirect = 'Symmetric_around_0'
+N_reconstruction = 100
+# N_sensors = 100
+FoV = 4*lambda_0
+for N_sensors in [100,110,120,130,140,150,160,170,180,190,200,250,300,350,400,450,500,550,600,650,700,750,800,101,151,201,251,301,351,401,451,501,551,601,651,701,751,801]:
+    coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction)
 
-
+# paths = find_direcories()
+# res = []
+# dist = []
+# plot_resolution_limit(paths)
 
 
 # N_reconstruction = 100

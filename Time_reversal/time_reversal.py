@@ -3,6 +3,8 @@ from constants import *
 import matplotlib.pyplot as plt
 from numba import jit, void, cuda, vectorize, guvectorize
 import sys
+import torch
+from time import time
 
 # TPB = 3
 #
@@ -131,15 +133,18 @@ class Sensor:
         self.E.append(G@pol)
 
     @staticmethod
-    # @jit(nopython=True)
-    # @cuda.jit('void(float64[:], float64[:], float64[:], complex128[:])')
-    # @jit(target ="cuda")
     @vectorize(['complex128(float64, float64, float64, complex128)'],target='parallel')
-    # @guvectorize(["complex128(float64[:,:,:],float64[:,:,:],float64[:,:,:],complex128[:,:,:,:,:])"], "(n,n,n),(n,n,n),(n,n,n),(n,n,n,n,n) -> (n,n,n,n)",target="parallel",nopython=True)
     def reconstruction(k_xx,k_yy,k_zz,E):
         E_tot = np.conj(E*np.exp(1j*(k_xx+k_yy+k_zz)))
-        # E_tot = np.sum(E_tot,axis=0)
         return E_tot
+
+    # @staticmethod
+    # # @vectorize(['complex128(float64, float64, float64, complex128)'],target='parallel')
+    # def reconstruction_1(k_xx,k_yy,k_zz,E):
+    #     E_tot = torch.tensor(E*np.exp(1j*(k_xx+k_yy+k_zz)))
+    #     E_tot = torch.conj(E_tot).cuda()
+    #     E_tot = E_tot.cpu().detach().numpy()
+    #     return E_tot
 
     # @staticmethod
     # def reconstruction(k_xx,k_yy,k_zz,E):

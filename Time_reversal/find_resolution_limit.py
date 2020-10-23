@@ -83,6 +83,8 @@ def find_direcories():
 
 def find_resolution_limit(paths,plot_extrema=False):
     f = open("resolution_1.txt", "w+")
+    dists = []
+    sensors = []
     for path in paths:
         elements = os.listdir(path)
         elements = [el for el in elements if not ".tiff" in el]
@@ -102,6 +104,15 @@ def find_resolution_limit(paths,plot_extrema=False):
                 background = np.amin(line)
                 diff = ((minima-background)/(np.amin(maxima)-background))
                 if diff <= 0.735:
+                    x_1 = float(element.split('_')[0].split(' ')[0].replace('[',''))
+                    x_2 = float(element.split('_')[2].split(' ')[0].replace('[',''))
+                    y_1 = float(element.split('_')[0].split(' ')[1])
+                    y_2 = float(element.split('_')[2].split(' ')[1])
+                    z_1 = float(element.split('_')[0].split(' ')[2].replace(']',''))
+                    z_2 = float(element.split('_')[2].split(' ')[2].replace(']',''))
+                    dist = np.sqrt((x_2-x_1)**2 + (y_2-y_1)**2 + (z_2-z_1)**2)
+                    dists.append(dist)
+                    sensors.append(path.split('_')[-2])
                     if plot_extrema == True:
                         plt.plot(line)
                         plt.plot(maxima_idx,maxima,'*',c='g')
@@ -116,6 +127,115 @@ def find_resolution_limit(paths,plot_extrema=False):
                 continue
 
 
-# 
+def plot_resolution_limit():
+    dists = []
+    paths = []
+    sensors = []
+    f = open("resolution_1.txt", "r")
+    for element in f:
+        pos = element.split('/')[-1]
+        x_1 = float(pos.split(' ')[0].replace('[',''))
+        y_1 = float(pos.split(' ')[1])
+        z_1 = float(pos.split(' ')[2].split('_')[0].replace(']',''))
+        x_2 = float(pos.split(' ')[2].split('_')[-1].replace('[',''))
+        y_2 = float(pos.split(' ')[3])
+        z_2 = float(pos.split(' ')[4].replace(']',''))
+
+        dist = np.sqrt((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
+        dists.append(dist)
+
+        sensors.append(int(element.split('/')[-2].split('_')[-2]))
+
+        paths.append(element.split('/')[4])
+
+    parallel_odd = []
+    parallel_odd_sen = []
+    parallel_even = []
+    parallel_even_sen = []
+    orthogonal_odd = []
+    orthogonal_odd_sen = []
+    orthogonal_even = []
+    orthogonal_even_sen = []
+    for i,dist in enumerate(dists):
+        if paths[i] == "Orthogonal_dipoles":
+            if sensors[i]%2 == 0:
+                orthogonal_even.append(dist)
+                orthogonal_even_sen.append(sensors[i])
+            else:
+                orthogonal_odd.append(dist)
+                orthogonal_odd_sen.append(sensors[i])
+        else:
+            if sensors[i]%2 == 0:
+                parallel_even.append(dist)
+                parallel_even_sen.append(sensors[i])
+            else:
+                parallel_odd.append(dist)
+                parallel_odd_sen.append(sensors[i])
+
+    plt.plot(orthogonal_even_sen,orthogonal_even,'b')
+    plt.plot(orthogonal_odd_sen,orthogonal_odd,'r')
+    plt.text(430, 0.63, 'Even number of sensors', fontsize=15,  color='black')
+    plt.plot([410], [0.63007], 'o',c='b')
+    plt.text(430, 0.6295, 'Odd number of sensors', fontsize=15,  color='black')
+    plt.plot([410], [0.62957], 'o',c='r')
+    plt.savefig('resolution_orthogonal_dipoles')
+    plt.clf()
+
+    plt.plot(parallel_even_sen,parallel_even,'b')
+    plt.plot(parallel_odd_sen,parallel_odd,'r')
+    plt.text(430, 0.965, 'Even number of sensors', fontsize=15,  color='black')
+    plt.plot([410], [0.96509], 'o',c='b')
+    plt.text(430, 0.9645, 'Odd number of sensors', fontsize=15,  color='black')
+    plt.plot([410], [0.96459], 'o',c='r')
+    plt.savefig('resolution_parallel_dipoles')
+
+
+    # plt.plot(sensors,dists)
+    # plt.show()
+
+
+# def plot_resolution_limit(paths):
+#     dists = []
+#     sensors = []
+#     for path in paths:
+#         elements = os.listdir(path)
+#         elements = [el for el in elements if not ".tiff" in el]
+#         for element in elements:
+#             file = os.listdir(path+'/'+element)
+#             z = len(file)
+#             x,y = np.array(Image.open(path+'/'+element+'/'+file[0])).shape
+#
+#             stack = np.zeros((x,y,z))
+#             for i in range(z):
+#                 stack[:,:,i] = Image.open(path+'/'+element+'/'+'{}.tiff'.format(i))
+#
+#             line = stack[np.where(stack==np.amax(stack))[0][0],:,z//2]
+#             maxima, maxima_idx, minima, minima_idx = find_extremum(line)
+#
+#             if 0.8 <= maxima[0]/maxima[1] <= 1.2:
+#                 background = np.amin(line)
+#                 diff = ((minima-background)/(np.amin(maxima)-background))
+#                 if diff <= 0.735:
+#                     x_1 = float(element.split('_')[0].split(' ')[0].replace('[',''))
+#                     x_2 = float(element.split('_')[2].split(' ')[0].replace('[',''))
+#                     y_1 = float(element.split('_')[0].split(' ')[1])
+#                     y_2 = float(element.split('_')[2].split(' ')[1])
+#                     z_1 = float(element.split('_')[0].split(' ')[2].replace(']',''))
+#                     z_2 = float(element.split('_')[2].split(' ')[2].replace(']',''))
+#                     dist = np.sqrt((x_2-x_1)**2 + (y_2-y_1)**2 + (z_2-z_1)**2)
+#                     dists.append(dist)
+#                     sensors.append(path.split('_')[-2])
+#                     print(path+'/'+element+' '+str(diff))
+#                     break
+#
+#             else:
+#                 continue
+#
+#     plt.plot(sensors,dists)
+#     plt.show()
+#
+#
+#
 # paths = find_direcories()
 # find_resolution_limit(paths)
+plot_resolution_limit()
