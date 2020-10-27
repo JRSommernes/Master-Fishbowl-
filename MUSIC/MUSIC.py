@@ -1,9 +1,10 @@
 import numpy as np
-from numba import jit
+from numba import njit, guvectorize, float64, complex128, int32
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import cdist
+from time import time
 
-# @jit(nopython=True, parallel=True)
+@njit
 def make_sensors(N_sensors,sensor_radius):
     sensors = np.zeros((N_sensors,3))
     phi = np.pi * (3. - np.sqrt(5.))  # golden angle in radians
@@ -22,11 +23,9 @@ def make_sensors(N_sensors,sensor_radius):
         sensors[i] = [x,y,z]
     return sensors.T
 
-# @jit(nopython=True, parallel=True)
+@njit
 def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
-    # x,y,z = dipole_pos
-    # r_p = np.array([sensors[0]-x, sensors[1]-y, sensors[2]-z])
-    r_p = sensors-dipole_pos.reshape(len(dipole_pos),1)
+    r_p = sensors-dipole_pos.reshape(3,1)
 
     R = np.sqrt(np.sum((r_p)**2,axis=0))
     R_hat = ((r_p)/R)
@@ -41,18 +40,17 @@ def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
     expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
 
     I = np.identity(3)
-    # G = (expr_1*RR_hat + expr_2*I[:,:,np.newaxis]).T
     G = (expr_1*RR_hat + expr_2*I.reshape(3,3,1)).T
 
     return G
 
 # @jit(nopython=True, parallel=True)
 def sensor_field(sensors,dipoles,polarizations,N_sensors,k_0):
-    E_tot = np.zeros((N_sensors,3),dtype=np.complex128)
+    E_tot = np.zeros((3*N_sensors,len(polarizations)),dtype=np.complex128)
 
     for i in range(len(dipoles)):
-        G = dyadic_green(sensors,dipoles[i],N_sensors,k_0)
-        E_tot += G.dot(polarizations[i])
+        G = dyadic_green(sensors,dipoles[i],N_sensors,k_0).reshape(3*N_sensors,3)
+        E_tot += G@polarizations.T
 
     return E_tot
 
@@ -67,7 +65,7 @@ def reconstruct(E_field):
     min_idx = np.where(eigvals==min)[0][0]
     dist = cdist(mat,mat)[min_idx]
 
-    noice_idx = np.where(dist<1e-4)[0]
+    noice_idx = np.where(dist<3e-4)[0]
     N = len(noice_idx)
     D = len(E_field)-N
 
@@ -75,19 +73,39 @@ def reconstruct(E_field):
 
     return E_N.T@np.conjugate(E_N)
 
-
-def something(E_field,N_sensors,sensor_radius,dipoles,k_0):
-    X = E_field.reshape((3*len(E_field),1))
+# @njit(parallel=True)
+def something(E_field,N_sensors,sensor_radius,k_0,wl):
 
     sensors = make_sensors(N_sensors,sensor_radius)
-    G = np.zeros((N_sensors,3,3),dtype=np.complex128)
-    for dipole_pos in dipoles:
-        G += dyadic_green(sensors,dipole_pos,N_sensors,k_0)
-    G = G.reshape((3*N_sensors,3))
+    # E_N = reconstruct(E_field)
 
-    #?????????????????????????????????????????
-    E_N = reconstruct(E_field.reshape(3*N_sensors,1))
-    print((np.conjugate(G).T@E_N@G).shape)
+    a = 10
+    x = np.linspace(-2*wl,2*wl,a)
+    y = np.linspace(-2*wl,2*wl,a)
+    z = np.linspace(-2*wl,2*wl,a)
+
+    # P_theta = np.zeros((a,b,c,3,3),dtype=np.complex128)
+    for i in range(a):
+        for j in range(a):
+            for k in range(a):
+                x_i,y_i,z_i = x[i],y[i],z[i]
+                pos = np.array((x_i,y_i,z_i))
+                A = dyadic_green(sensors,pos,N_sensors,k_0)
+
+                # P_theta[i,j,k] = 1/(np.conjugate(A).T@E_N@A)
+
+    # P_ish = np.sum(np.sum(P_theta,axis=4),axis=3)
+    #
+    # print(np.where(P_ish == np.amax(P_ish)))
+    #
+    # plt.imshow(np.abs(P_ish[:,:,8]))
+    # plt.show()
+
+
+    # G = np.zeros((N_sensors,3,3),dtype=np.complex128)
+    # for dipole_pos in dipoles:
+    #     G += dyadic_green(sensors,dipole_pos,N_sensors,k_0)
+    # G = G.reshape((3*N_sensors,3))
 
     # tmp = np.array([[np.cos( np.pi)*np.sin(np.pi/4),np.sin( np.pi)*np.sin(np.pi/4),np.cos(np.pi/4)]]).T
     # print(X-G@tmp)

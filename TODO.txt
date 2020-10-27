@@ -1,0 +1,7 @@
+Remove x% of sensors and find the impact on the recounstruction
+
+Plott lengde av FoV abberation som funksjon av distanse fra origo
+
+Later stage:
+
+	Replace x% of sensors with emitters
