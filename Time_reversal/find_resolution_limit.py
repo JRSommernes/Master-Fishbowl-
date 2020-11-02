@@ -62,27 +62,26 @@ def find_extremum(line):
 
     return maxima,maxima_idx,minima,minima_idx
 
-def find_direcories():
-    directory = os.listdir('C:/Python/Master (Fishbowl)/Images')
+def find_direcories(path):
+    # directory = os.listdir('C:/Python/Master (Fishbowl)/Images')
+    directory = os.listdir(path)
     paths = []
     for dir in directory:
         if dir != "Single dipole":
-            subdirectory = os.listdir('C:/Python/Master (Fishbowl)/Images/'+dir)
+            subdirectory = os.listdir(path+'/'+dir)
             for subdir in subdirectory:
-                subsubdirectory = os.listdir('C:/Python/Master (Fishbowl)/Images/'+dir+'/'+subdir)
+                subsubdirectory = os.listdir(path+'/'+dir+'/'+subdir)
                 for subsubdir in subsubdirectory:
-
-                    paths.append('C:/Python/Master (Fishbowl)/Images/'+dir+'/'+subdir+'/'+subsubdir)
-
-                    # element = os.listdir('images/'+dir+'/'+subdir+'/'+subsubdir)
+                    paths.append(path+'/'+dir+'/'+subdir+'/'+subsubdir)
+                    # element = os.listdir(path+'/'+dir+'/'+subdir+'/'+subsubdir)
                     # for ele in element:
                     #     if not ".tiff" in ele:
-                    #         paths.append('images/'+dir+'/'+subdir+'/'+subsubdir+'/'+ele)
+                    #         paths.append(path+'/'+dir+'/'+subdir+'/'+subsubdir+'/'+ele)
 
     return paths
 
 def find_resolution_limit(paths,plot_extrema=False):
-    f = open("resolution_1.txt", "w+")
+    f = open("resolution.txt", "w+")
     dists = []
     sensors = []
     for path in paths:
@@ -131,7 +130,7 @@ def plot_resolution_limit():
     dists = []
     paths = []
     sensors = []
-    f = open("resolution_1.txt", "r")
+    f = open("resolution.txt", "r")
     for element in f:
         pos = element.split('/')[-1]
         x_1 = float(pos.split(' ')[0].replace('[',''))
@@ -178,6 +177,8 @@ def plot_resolution_limit():
     plt.plot([410], [0.63007], 'o',c='b')
     plt.text(430, 0.6295, 'Odd number of sensors', fontsize=15,  color='black')
     plt.plot([410], [0.62957], 'o',c='r')
+    plt.ylabel('Resolution limit [wavelengths]')
+    plt.xlabel('Number of sensors')
     plt.savefig('resolution_orthogonal_dipoles')
     plt.clf()
 
@@ -187,55 +188,80 @@ def plot_resolution_limit():
     plt.plot([410], [0.96509], 'o',c='b')
     plt.text(430, 0.9645, 'Odd number of sensors', fontsize=15,  color='black')
     plt.plot([410], [0.96459], 'o',c='r')
+    plt.ylabel('Resolution limit [wavelengths]')
+    plt.xlabel('Number of sensors')
     plt.savefig('resolution_parallel_dipoles')
 
+def plot_resolution_limit_wl():
+    dists = []
+    paths = []
+    sensors = []
+    f = open("resolution_2.txt", "r")
+    for element in f:
+        pos = element.split('/')[-1]
+        x_1 = float(pos.split(' ')[0].replace('[',''))
+        y_1 = float(pos.split(' ')[1])
+        z_1 = float(pos.split(' ')[2].split('_')[0].replace(']',''))
+        x_2 = float(pos.split(' ')[2].split('_')[-1].replace('[',''))
+        y_2 = float(pos.split(' ')[3])
+        z_2 = float(pos.split(' ')[4].replace(']',''))
 
-    # plt.plot(sensors,dists)
-    # plt.show()
+        dist = np.sqrt((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
+        dists.append(dist)
+
+        sensors.append(int(element.split('/')[-2].split('_')[-2]))
+
+        # paths.append(element.split('/')[4])
 
 
-# def plot_resolution_limit(paths):
-#     dists = []
-#     sensors = []
-#     for path in paths:
-#         elements = os.listdir(path)
-#         elements = [el for el in elements if not ".tiff" in el]
-#         for element in elements:
-#             file = os.listdir(path+'/'+element)
-#             z = len(file)
-#             x,y = np.array(Image.open(path+'/'+element+'/'+file[0])).shape
-#
-#             stack = np.zeros((x,y,z))
-#             for i in range(z):
-#                 stack[:,:,i] = Image.open(path+'/'+element+'/'+'{}.tiff'.format(i))
-#
-#             line = stack[np.where(stack==np.amax(stack))[0][0],:,z//2]
-#             maxima, maxima_idx, minima, minima_idx = find_extremum(line)
-#
-#             if 0.8 <= maxima[0]/maxima[1] <= 1.2:
-#                 background = np.amin(line)
-#                 diff = ((minima-background)/(np.amin(maxima)-background))
-#                 if diff <= 0.735:
-#                     x_1 = float(element.split('_')[0].split(' ')[0].replace('[',''))
-#                     x_2 = float(element.split('_')[2].split(' ')[0].replace('[',''))
-#                     y_1 = float(element.split('_')[0].split(' ')[1])
-#                     y_2 = float(element.split('_')[2].split(' ')[1])
-#                     z_1 = float(element.split('_')[0].split(' ')[2].replace(']',''))
-#                     z_2 = float(element.split('_')[2].split(' ')[2].replace(']',''))
-#                     dist = np.sqrt((x_2-x_1)**2 + (y_2-y_1)**2 + (z_2-z_1)**2)
-#                     dists.append(dist)
-#                     sensors.append(path.split('_')[-2])
-#                     print(path+'/'+element+' '+str(diff))
-#                     break
-#
-#             else:
-#                 continue
-#
-#     plt.plot(sensors,dists)
-#     plt.show()
-#
-#
-#
-# paths = find_direcories()
+
+    plt.plot(dists,'b')
+    plt.ylabel('Resolution limit [wavelengths]')
+    plt.xlabel('Something')
+    # plt.savefig('resolution_orthogonal_dipoles')
+    # plt.clf()
+    plt.show()
+
+
+def find_reyleigh(path):
+    dists = []
+    reyleigh = []
+    elements = os.listdir(path)
+    elements = [el for el in elements if not ".tiff" in el]
+    for element in elements:
+        file = os.listdir(path+'/'+element)
+        z = len(file)
+        x,y = np.array(Image.open(path+'/'+element+'/'+file[0])).shape
+
+        stack = np.zeros((x,y,z))
+        for i in range(z):
+            stack[:,:,i] = Image.open(path+'/'+element+'/'+'{}.tiff'.format(i))
+
+        line = stack[np.where(stack==np.amax(stack))[0][0],:,z//2]
+        maxima, maxima_idx, minima, minima_idx = find_extremum(line)
+
+        background = np.amin(line)
+        diff = ((minima-background)/(np.amin(maxima)-background))
+        reyleigh.append(diff)
+        pos = element.split('/')[-1]
+        x_1 = float(pos.split(' ')[0].replace('[',''))
+        y_1 = float(pos.split(' ')[1])
+        z_1 = float(pos.split(' ')[2].split('_')[0].replace(']',''))
+        x_2 = float(pos.split(' ')[2].split('_')[-1].replace('[',''))
+        y_2 = float(pos.split(' ')[3])
+        z_2 = float(pos.split(' ')[4].replace(']',''))
+
+        dist = np.sqrt((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
+        dists.append(dist)
+
+    plt.plot(dists,reyleigh)
+    plt.xlabel('Distance [wavelengths]')
+    plt.ylabel('Intensity difference')
+    plt.savefig('rayleigh')
+
+
+
+# paths = find_direcories("C:/Python/Master (Fishbowl)/Images")
 # find_resolution_limit(paths)
-plot_resolution_limit()
+# plot_resolution_limit()
+# find_reyleigh('C:/Python\Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__500_sensors')

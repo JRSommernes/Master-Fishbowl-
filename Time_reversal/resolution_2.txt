@@ -1,0 +1,10 @@
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/400.00000000000006_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349851198358585
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/438.88888888888897_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349850911196002
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/477.7777777777778_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349851418313049
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/516.6666666666666_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349851503943491
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/555.5555555555557_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349851235135396
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/594.4444444444445_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349850960777862
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/633.3333333333334_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.734985105466011
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/672.2222222222222_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349850911800072
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/711.1111111111112_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349850718143661
+C:\Python\Master (Fishbowl)\Images\Different_wavelengths_orthogonal_dipoles/750.0_nm/2_dipoles__300_sensors/[-0.31542480 1.00000000 0.00000000]__[0.31542480 1.00000000 0.00000000] 0.7349851198520531
