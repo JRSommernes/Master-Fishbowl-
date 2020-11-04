@@ -4,15 +4,49 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from numba import njit
 
+#Faster if run thousand times with njit
+def make_sensors(N_sensors,sensor_radius):
+    sensors = np.zeros((N_sensors,3))
+    phi = np.pi * (3. - np.sqrt(5.))  # golden angle in radians
+
+    for i in range(N_sensors):
+        y = (1 - (i / float(N_sensors - 1)) * 2)  # y goes from 1 to -1
+        radius = np.sqrt(1 - y * y)  # radius at y
+
+        theta = phi * i  # golden angle increment
+
+        x = np.cos(theta) * radius
+        z = np.sin(theta) * radius
+
+        x,y,z = x*sensor_radius, y*sensor_radius, z*sensor_radius
+
+        sensors[i] = [x,y,z]
+    return sensors.T
+
+#Slower if njit
+def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
+    r_p = sensors-dipole_pos.reshape(3,1)
+
+    R = np.sqrt(np.sum((r_p)**2,axis=0))
+    R_hat = ((r_p)/R)
+
+    RR_hat = np.einsum('ik,jk->ijk',R_hat,R_hat)
+
+    g_R = np.exp(1j*k_0*R)/(4*np.pi*R)
+    expr_1 = (3/(k_0**2*R**2)-3j/(k_0*R)-1)*g_R
+    expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
+
+    I = np.identity(3)
+    G = (expr_1*RR_hat + expr_2*I.reshape(3,3,1)).T
+
+    return G
+
 def plot_sensors(sensors,wl):
     coordinates = sensors/wl
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     X, Y, Z = coordinates[0],coordinates[1],coordinates[2]
     scat = ax.scatter(X, Y, Z)
-    # ax.plot([-15, 15], [0,0],zs=[0,0])
-    # ax.plot([0,0], [-15, 15],zs=[0,0])
-    # ax.plot([0,0], [0,0],zs=[-15, 15])
 
     ax.set_box_aspect([X.max(),Y.max(),Z.max()])
     ax.set_xlabel('x-position [wavelengths]')
@@ -28,18 +62,6 @@ def high_inner(A,B):
         for j in range(b):
             for k in range(c):
                 C[i,j,k] = A[i,j,k].dot(B[i,j,k])
-
-    return C
-
-@njit(parallel=True)
-def high_outer(A,B):
-    a,b,c,d,e = A.shape
-    C = np.zeros((a,b,c,d,e,e),dtype=np.complex64)
-    for i in range(a):
-        for j in range(b):
-            for k in range(c):
-                for l in range(d):
-                    C[i,j,k,l] = np.outer(A[i,j,k,l],B[i,j,k,l])
 
     return C
 
