@@ -3,6 +3,8 @@ from constants import *
 import matplotlib.pyplot as plt
 from numba import jit, void, cuda, vectorize, guvectorize
 import sys
+import torch
+from time import time
 
 # TPB = 3
 #
@@ -12,10 +14,11 @@ import sys
 #     sxx = cuda.shared.array(shape=(TPB, TPB), dtype=float32)
 
 class Microscope:
-    def __init__(self,N_sensors,N_reconstruction,FoV):
+    def __init__(self,N_sensors,N_reconstruction,FoV,k_0):
         self.sensor_ammount = N_sensors
         self.reconstruction_size = N_reconstruction
         self.FoV = FoV
+        self.k_0 = k_0
 
     def make_dipoles(self,dipole_pos,pol):
         dipoles = []
@@ -48,7 +51,7 @@ class Microscope:
         for sensor in self.sensors:
             for dipole in self.dipoles:
                 pol = np.array([dipole.x_pol,dipole.y_pol,dipole.z_pol])
-                sensor.dipole_field(dipole.x,dipole.y,dipole.z,pol)
+                sensor.dipole_field(dipole.x,dipole.y,dipole.z,pol,self.k_0)
 
     def reconstruct_image(self,size):
         self.record_sensors()
@@ -64,16 +67,17 @@ class Microscope:
 
         counter=0
         for sensor in self.sensors:
-            counter+=1
-            if counter%(self.sensor_ammount//100)==0:
-                done = (counter*100)//self.sensor_ammount
-                # print('{} %   '.format(done), end="\r")
-                sys.stdout.write('\r')
-                sys.stdout.write("[%-100s] %d%%" % ('='*done, done))
-                sys.stdout.flush()
-            k_x = k_0*sensor.x/sensor.radius
-            k_y = k_0*sensor.y/sensor.radius
-            k_z = k_0*sensor.z/sensor.radius
+            if self.sensor_ammount >= 100:
+                counter+=1
+                if counter%(self.sensor_ammount//100)==0:
+                    done = (counter*100)//self.sensor_ammount
+                    # print('{} %   '.format(done), end="\r")
+                    sys.stdout.write('\r')
+                    sys.stdout.write("[%-100s] %d%%" % ('='*done, done))
+                    sys.stdout.flush()
+            k_x = self.k_0*sensor.x/sensor.radius
+            k_y = self.k_0*sensor.y/sensor.radius
+            k_z = self.k_0*sensor.z/sensor.radius
             E = np.array(sensor.E)[:,:,np.newaxis,np.newaxis,np.newaxis]
             self.E_tot += sensor.reconstruction(xx*k_x,yy*k_y,zz*k_z,E)
         self.E_tot = np.sum(self.E_tot,axis=0)
@@ -109,7 +113,7 @@ class Sensor:
         dist = np.sqrt(r[0]**2+r[1]**2+r[2]**2)
         self.time_lag.append(dist/c_0)
 
-    def dipole_field(self,x,y,z,pol):
+    def dipole_field(self,x,y,z,pol,k_0):
         r_x, r_y, r_z = self.x-x, self.y-y, self.z-z
 
         r_p = np.array((r_x,r_y,r_z))
@@ -131,15 +135,18 @@ class Sensor:
         self.E.append(G@pol)
 
     @staticmethod
-    # @jit(nopython=True)
-    # @cuda.jit('void(float64[:], float64[:], float64[:], complex128[:])')
-    # @jit(target ="cuda")
     @vectorize(['complex128(float64, float64, float64, complex128)'],target='parallel')
-    # @guvectorize(["complex128(float64[:,:,:],float64[:,:,:],float64[:,:,:],complex128[:,:,:,:,:])"], "(n,n,n),(n,n,n),(n,n,n),(n,n,n,n,n) -> (n,n,n,n)",target="parallel",nopython=True)
     def reconstruction(k_xx,k_yy,k_zz,E):
         E_tot = np.conj(E*np.exp(1j*(k_xx+k_yy+k_zz)))
-        # E_tot = np.sum(E_tot,axis=0)
         return E_tot
+
+    # @staticmethod
+    # # @vectorize(['complex128(float64, float64, float64, complex128)'],target='parallel')
+    # def reconstruction_1(k_xx,k_yy,k_zz,E):
+    #     E_tot = torch.tensor(E*np.exp(1j*(k_xx+k_yy+k_zz)))
+    #     E_tot = torch.conj(E_tot).cuda()
+    #     E_tot = E_tot.cpu().detach().numpy()
+    #     return E_tot
 
     # @staticmethod
     # def reconstruction(k_xx,k_yy,k_zz,E):
