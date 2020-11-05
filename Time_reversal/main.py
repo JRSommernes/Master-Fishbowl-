@@ -6,6 +6,8 @@ from PIL import Image
 import os
 from find_resolution_limit import *
 
+from mpl_toolkits.mplot3d import Axes3D
+
 def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
     folder = 'C:/Python/Master (Fishbowl)/images'
     directory = folder+'/'+subdir+'/'+subsubdir+'/{}_dipoles__{}_sensors'.format(len(dipole_pos),N_sensors)

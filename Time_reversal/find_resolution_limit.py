@@ -125,6 +125,30 @@ def find_resolution_limit(paths,plot_extrema=False):
             else:
                 continue
 
+def plot_resolution_limit(file):
+    f = open(file, "r")
+    sensors = [100,200,400,600,800]
+    rayleigh = []
+    dist = []
+    for line in f:
+        words = []
+        for word in line.split("/"):
+            words.append(word)
+
+        pos_1 = words[-1].split("__")[0].split(" ")
+        pos_1[0] = pos_1[0].replace('[',' ')
+        pos_1[-1] = pos_1[-1].replace(']',' ')
+
+        pos_2 = words[-1].split("__")[-1].split(" ")[0:3]
+        pos_2[0] = pos_2[0].replace('[',' ')
+        pos_2[-1] = pos_2[-1].replace(']',' ')
+
+        x_1,y_1,z_1 = float(pos_1[0]), float(pos_1[1]), float(pos_1[2])
+        x_2, y_2, z_2 = float(pos_2[0]), float(pos_2[1]), float(pos_2[2])
+        d = np.sqrt((x_2-x_1)**2 + (z_2-z_1)**2 + (z_2-z_1)**2)
+        dist.append(d)
+    plt.plot(sensors,dist)
+    plt.show()
 
 def plot_resolution_limit():
     dists = []
