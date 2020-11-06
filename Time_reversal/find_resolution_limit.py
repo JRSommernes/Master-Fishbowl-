@@ -125,30 +125,35 @@ def find_resolution_limit(paths,plot_extrema=False):
             else:
                 continue
 
-def plot_resolution_limit(file):
-    f = open(file, "r")
-    sensors = [100,200,400,600,800]
-    rayleigh = []
-    dist = []
-    for line in f:
-        words = []
-        for word in line.split("/"):
-            words.append(word)
-
-        pos_1 = words[-1].split("__")[0].split(" ")
-        pos_1[0] = pos_1[0].replace('[',' ')
-        pos_1[-1] = pos_1[-1].replace(']',' ')
-
-        pos_2 = words[-1].split("__")[-1].split(" ")[0:3]
-        pos_2[0] = pos_2[0].replace('[',' ')
-        pos_2[-1] = pos_2[-1].replace(']',' ')
-
-        x_1,y_1,z_1 = float(pos_1[0]), float(pos_1[1]), float(pos_1[2])
-        x_2, y_2, z_2 = float(pos_2[0]), float(pos_2[1]), float(pos_2[2])
-        d = np.sqrt((x_2-x_1)**2 + (z_2-z_1)**2 + (z_2-z_1)**2)
-        dist.append(d)
-    plt.plot(sensors,dist)
-    plt.show()
+# def plot_resolution_limit(file):
+#     f = open(file, "r")
+#     sensors = [100,200,400,600,800]
+#     rayleigh = []
+#     dist = []
+#     for line in f:
+#         words = []
+#         for word in line.split("/"):
+#             words.append(word)
+#
+#         pos_1 = words[-1].split("__")[0].split(" ")
+#         pos_1[0] = pos_1[0].replace('[',' ')
+#         pos_1[-1] = pos_1[-1].replace(']',' ')
+#
+#         pos_2 = words[-1].split("__")[-1].split(" ")[0:3]
+#         pos_2[0] = pos_2[0].replace('[',' ')
+#         pos_2[-1] = pos_2[-1].replace(']',' ')
+#
+#         x_1,y_1,z_1 = float(pos_1[0]), float(pos_1[1]), float(pos_1[2])
+#         x_2, y_2, z_2 = float(pos_2[0]), float(pos_2[1]), float(pos_2[2])
+#         d = np.sqrt((x_2-x_1)**2 + (z_2-z_1)**2 + (z_2-z_1)**2)
+#         dist.append(d)
+#
+#     print(sensors)
+#     print(dist)
+#     exit()
+#
+#     plt.plot(sensors,dist)
+#     plt.show()
 
 def plot_resolution_limit():
     dists = []
@@ -195,6 +200,15 @@ def plot_resolution_limit():
                 parallel_odd.append(dist)
                 parallel_odd_sen.append(sensors[i])
 
+
+    orthogonal_even_sen, orthogonal_even = zip(*sorted(zip(orthogonal_even_sen, orthogonal_even)))
+    orthogonal_even_sen = orthogonal_even_sen[:1]+orthogonal_even_sen[2:]
+    orthogonal_even = orthogonal_even[:1]+orthogonal_even[2:]
+    orthogonal_odd_sen, orthogonal_odd = zip(*sorted(zip(orthogonal_odd_sen, orthogonal_odd)))
+    parallel_even_sen, parallel_even = zip(*sorted(zip(parallel_even_sen, parallel_even)))
+    parallel_odd_sen, parallel_odd = zip(*sorted(zip(parallel_odd_sen, parallel_odd)))
+
+
     plt.plot(orthogonal_even_sen,orthogonal_even,'b')
     plt.plot(orthogonal_odd_sen,orthogonal_odd,'r')
     plt.text(430, 0.63, 'Even number of sensors', fontsize=15,  color='black')
@@ -220,7 +234,7 @@ def plot_resolution_limit_wl():
     dists = []
     paths = []
     sensors = []
-    f = open("resolution_2.txt", "r")
+    f = open("resolution.txt", "r")
     for element in f:
         pos = element.split('/')[-1]
         x_1 = float(pos.split(' ')[0].replace('[',''))
@@ -278,7 +292,8 @@ def find_reyleigh(path):
         dist = np.sqrt((x_2-x_1)**2+(y_2-y_1)**2+(z_2-z_1)**2)
         dists.append(dist)
 
-    plt.plot(dists,reyleigh)
+    plt.plot(dists[:30],reyleigh[:30])
+    plt.axhline(0.735,c='r',ls=':')
     plt.xlabel('Distance [wavelengths]')
     plt.ylabel('Intensity difference')
     plt.savefig('rayleigh')
@@ -287,5 +302,5 @@ def find_reyleigh(path):
 
 # paths = find_direcories("C:/Python/Master (Fishbowl)/Images")
 # find_resolution_limit(paths)
-# plot_resolution_limit()
+plot_resolution_limit()
 # find_reyleigh('C:/Python\Master (Fishbowl)/Images/Orthogonal_dipoles/Symmetric_around_0/2_dipoles__500_sensors')
