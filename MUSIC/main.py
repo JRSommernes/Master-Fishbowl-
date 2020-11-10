@@ -21,7 +21,13 @@ if __name__ == '__main__':
     M_inputs = 100
     N_recon = 51
 
-    E_sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
-    P = P_estimation(E_sensors,N_sensors,N_recon,sensor_radius,FoV,k_0,wl)
+    # E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
+    # P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
 
-    save_stack(P,'C:/python/Master (Fishbowl)/MUSIC/p_theta_test')
+    data = {'Num_dipoles' : len(dipoles), 'N_recon' : N_recon, 'N_sensors' : N_sensors, 'M_orientations' : M_inputs, 'Field of View' : FoV}
+
+    for keys in data:
+        print(data[keys])
+    exit()
+
+    save_stack(P,'C:/python/Master (Fishbowl)/MUSIC/images',data)

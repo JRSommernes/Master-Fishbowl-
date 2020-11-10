@@ -1,7 +1,7 @@
 import numpy as np
-from numba import njit
+from numba import njit, guvectorize, float64, complex128, int64
 from time import time
-from misc_functions import *
+from misc_functions import dyadic_green, high_inner
 
 #Do not use (Very buggy, not usable)
 # def dyadic_green_FoV(sensors,xx,yy,zz,N_sensors,grid_size,k_0,presition='Single'):
@@ -36,23 +36,6 @@ from misc_functions import *
 #
 #     return G
 
-def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
-    r_p = sensors-dipole_pos.reshape(3,1)
-
-    R = np.sqrt(np.sum((r_p)**2,axis=0))
-    R_hat = ((r_p)/R)
-
-    RR_hat = np.einsum('ik,jk->ijk',R_hat,R_hat)
-
-    g_R = np.exp(1j*k_0*R)/(4*np.pi*R)
-    expr_1 = (3/(k_0**2*R**2)-3j/(k_0*R)-1)*g_R
-    expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
-
-    I = np.identity(3)
-    G = (expr_1*RR_hat + expr_2*I.reshape(3,3,1)).T
-
-    return G
-
 #Same speed when njit
 def noise_space(E_field):
     S = np.conjugate(E_field@np.conjugate(E_field).T)
@@ -71,25 +54,46 @@ def noise_space(E_field):
     return E_N
 
 
+
 # @njit(parallel=True)
-def P_estimation(E_field,N_sensors,N_recon,sensor_radius,FoV,k_0,wl):
+def green_FoV(x,y,z,k_0,sensors,N_sensors,N_recon):
+    A = np.zeros((3*N_sensors,3,N_recon,N_recon,N_recon),dtype=np.complex128)
+    for i in range(N_recon):
+        for j in range(N_recon):
+            for k in range(N_recon):
+                dipole_pos = np.array(((x[j],y[i],z[k])))
+                A[:,:,i,j,k] = dyadic_green(sensors,dipole_pos,N_sensors,k_0).reshape(3*N_sensors,3)
+
+    return A
+
+# @njit(parallel=True)
+def P_estimation(E_field,sensors,N_recon,FoV,k_0):
+    N_sensors = sensors.shape[1]
+
     E_N = noise_space(E_field)
-
-    sensors = make_sensors(N_sensors,sensor_radius)
-
-    dipole_pos = np.array(((0,0.5*wl,2*wl)))
-    t0 = time()
-    for i in range(50**3):
-        dyadic_green(sensors,dipole_pos,N_sensors,k_0)
-    print(time()-t0)
-    exit()
 
     x = np.linspace(FoV[0,0],FoV[0,1],N_recon)
     y = np.linspace(FoV[1,0],FoV[1,1],N_recon)
     z = np.linspace(FoV[2,0],FoV[2,1],N_recon)
 
-    P = np.zeros((N_recon,N_recon,N_recon),dtype=np.complex128)
+    # A = green_FoV(x,y,z,k_0,sensors,N_sensors,N_recon)
+    #
+    # P_1_1 = np.conjugate(A[:,0].T)@np.conjugate(E_N)
+    # P_1_2 = A[:,0].transpose(1,2,3,0)@E_N
+    # P_1 = 1/high_inner(P_1_1,P_1_2)
+    #
+    # P_2_1 = np.conjugate(A[:,1].transpose(1,2,3,0))@np.conjugate(E_N)
+    # P_2_2 = A[:,1].transpose(1,2,3,0)@E_N
+    # P_2 = 1/high_inner(P_2_1,P_2_2)
+    #
+    # P_3_1 = np.conjugate(A[:,2].transpose(1,2,3,0))@np.conjugate(E_N)
+    # P_3_2 = A[:,2].transpose(1,2,3,0)@E_N
+    # P_3 = 1/high_inner(P_3_1,P_3_2)
+    #
+    # P_sum = P_1+P_2+P_3
 
+    P = np.zeros((N_recon,N_recon,N_recon),dtype=np.complex128)
+    diff = []
     for i in range(N_recon):
         print(i)
         for j in range(N_recon):
@@ -97,8 +101,17 @@ def P_estimation(E_field,N_sensors,N_recon,sensor_radius,FoV,k_0,wl):
                 dipole_pos = np.array(((x[j],y[i],z[k])))
                 A = dyadic_green(sensors,dipole_pos,N_sensors,k_0).reshape((3*N_sensors,3))
                 P[i,j,k] = 1/(np.conjugate(A[:,0].T)@np.conjugate(E_N)@E_N.T@A[:,0])
-                # P[i,j,k] += 1/(np.conjugate(A[:,1].T)@np.conjugate(E_N)@E_N.T@A[:,1])
-                # P[i,j,k] += 1/(np.conjugate(A[:,2].T)@np.conjugate(E_N)@E_N.T@A[:,2])
+                # print(P_1_1[i,j,k]-np.conjugate(A[:,0].T)@np.conjugate(E_N))
+                P[i,j,k] += 1/(np.conjugate(A[:,1].T)@np.conjugate(E_N)@E_N.T@A[:,1])
+                P[i,j,k] += 1/(np.conjugate(A[:,2].T)@np.conjugate(E_N)@E_N.T@A[:,2])
+
+    # diff = np.abs(P-P_sum)
+    # diff_max = diff.min()
+    #
+    # #Something funky
+    # print(diff[np.where(diff==diff_max)],P[np.where(diff==diff_max)],P_sum[np.where(diff==diff_max)])
+    #
+    # exit()
 
 
     return P

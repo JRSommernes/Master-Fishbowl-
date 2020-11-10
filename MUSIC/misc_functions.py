@@ -4,25 +4,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from numba import njit
 
-#Faster if run thousand times with njit
-def make_sensors(N_sensors,sensor_radius):
-    sensors = np.zeros((N_sensors,3))
-    phi = np.pi * (3. - np.sqrt(5.))  # golden angle in radians
-
-    for i in range(N_sensors):
-        y = (1 - (i / float(N_sensors - 1)) * 2)  # y goes from 1 to -1
-        radius = np.sqrt(1 - y * y)  # radius at y
-
-        theta = phi * i  # golden angle increment
-
-        x = np.cos(theta) * radius
-        z = np.sin(theta) * radius
-
-        x,y,z = x*sensor_radius, y*sensor_radius, z*sensor_radius
-
-        sensors[i] = [x,y,z]
-    return sensors.T
-
 #Slower if njit
 def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
     r_p = sensors-dipole_pos.reshape(3,1)
@@ -65,7 +46,9 @@ def high_inner(A,B):
 
     return C
 
-def save_stack(I,dir):
+def save_stack(I,dir,data):
+
+
     for i in range(I.shape[2]):
         im = Image.fromarray(np.abs(I[:,:,i]).astype(np.float64))
         im.save(dir+'/{}.tiff'.format(i))
