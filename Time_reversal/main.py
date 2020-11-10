@@ -6,6 +6,8 @@ from PIL import Image
 import os
 from find_resolution_limit import *
 
+from mpl_toolkits.mplot3d import Axes3D
+
 def check_directory(subdir,subsubdir,dipole_pos,N_sensors):
     folder = 'C:/Python/Master (Fishbowl)/images'
     directory = folder+'/'+subdir+'/'+subsubdir+'/{}_dipoles__{}_sensors'.format(len(dipole_pos),N_sensors)
@@ -182,13 +184,20 @@ def coverge_resolution_limit(subdir,subsubdir,N_sensors,FoV,N_reconstruction, k_
 # for N_sensors in [20,21,24,25,30,31,34,35,40,41,50,51,60,61,70,71,80,81,90,91,105,115,125,135,145,155,165,175,185,195,220,225,270,275,320,325,370,375,420,425,470,475,520,525,570,575,620,625,670,675,720,725,770,775]:
 #     coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction,k_0)
 
-subdirect = 'Parallel_dipoles'
+subdirect = 'Orthogonal_dipoles'
 subsubdirect = 'Symmetric_around_0'
 N_reconstruction = 100
 # N_sensors = 100
 FoV = 4*lambda_0
-for N_sensors in [20,21,24,25,30,31,34,35,40,41,50,51,60,61,70,71,80,81,90,91,105,115,125,135,145,155,165,175,185,195,220,225,270,275,320,325,370,375,420,425,470,475,520,525,570,575,620,625,670,675,720,725,770,775]:
-    coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction,k_0)
+# for N_sensors in [20,21,24,25,30,31,34,35,40,41,50,51,60,61,70,71,80,81,90,91,105,115,125,135,145,155,165,175,185,195,220,225,270,275,320,325,370,375,420,425,470,475,520,525,570,575,620,625,670,675,720,725,770,775]:
+    # coverge_resolution_limit(subdirect,subsubdirect,N_sensors,FoV,N_reconstruction,k_0)
+N_sensors = 500
+polarization = np.array([[1,0,0],[0,0,1]])
+for x in [0.15*lambda_0,0.20*lambda_0,0.25*lambda_0]:
+    dipole_pos = np.array([[-x,0,0],[x,0,0]])
+    reconstruct_image(dipole_pos, polarization, subdirect, subsubdirect, FoV, k_0, N_sensors, N_reconstruction)
+
+
 
 # paths = find_direcories()
 # res = []
