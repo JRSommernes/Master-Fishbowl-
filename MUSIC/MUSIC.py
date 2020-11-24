@@ -38,7 +38,7 @@ from misc_functions import dyadic_green, high_inner
 
 #Same speed when njit
 def noise_space(E_field):
-    S = np.conjugate(E_field@np.conjugate(E_field).T)
+    S = E_field@np.conjugate(E_field).T
     M = S.shape[0]
 
     eigvals,eigvecs = np.linalg.eig(S)
@@ -100,7 +100,7 @@ def P_estimation(E_field,sensors,N_recon,FoV,k_0):
             for k in range(N_recon):
                 dipole_pos = np.array(((x[j],y[i],z[k])))
                 A = dyadic_green(sensors,dipole_pos,N_sensors,k_0).reshape((3*N_sensors,3))
-                P[i,j,k] = 1/(np.conjugate(A[:,0].T)@np.conjugate(E_N)@E_N.T@A[:,0])
+                P[i,j,k] = 1/(np.conjugate(A[:,0].T)@E_N@np.conjugate(E_N.T)@A[:,0])
                 # print(P_1_1[i,j,k]-np.conjugate(A[:,0].T)@np.conjugate(E_N))
                 P[i,j,k] += 1/(np.conjugate(A[:,1].T)@np.conjugate(E_N)@E_N.T@A[:,1])
                 P[i,j,k] += 1/(np.conjugate(A[:,2].T)@np.conjugate(E_N)@E_N.T@A[:,2])
@@ -112,6 +112,9 @@ def P_estimation(E_field,sensors,N_recon,FoV,k_0):
     # print(diff[np.where(diff==diff_max)],P[np.where(diff==diff_max)],P_sum[np.where(diff==diff_max)])
     #
     # exit()
+
+    print(P.max())
+
 
 
     return P

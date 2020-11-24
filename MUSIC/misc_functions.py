@@ -48,6 +48,7 @@ def high_inner(A,B):
 
 def save_stack(I,dir,data):
 
+    # os.mkdir(dir+'/'+current+'/image')
 
     for i in range(I.shape[2]):
         im = Image.fromarray(np.abs(I[:,:,i]).astype(np.float64))

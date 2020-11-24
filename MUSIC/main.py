@@ -2,6 +2,8 @@ import numpy as np
 from misc_functions import *
 from imaging import *
 from MUSIC import *
+import json
+import os
 
 if __name__ == '__main__':
     eps_0 = 8.8541878128e-12
@@ -14,20 +16,45 @@ if __name__ == '__main__':
     omega = 2*np.pi*freq
 
     sensor_radius = 10*wl
-    dipoles = np.array([[0.8*wl,0*wl,0*wl],[-0.8*wl,0*wl,0*wl],[0*wl,0.8*wl,0*wl]])
-    FoV = np.array([[-2*wl,2*wl],[-2*wl,2*wl],[-2*wl,2*wl]])
+    # dipoles = np.array([[0.8*wl,0*wl,0*wl],
+    #                     [-0.8*wl,0*wl,0*wl],
+    #                     [0*wl,0.8*wl,0*wl]])
+
+    FoV = np.array([[-2*wl,2*wl],
+                    [-2*wl,2*wl],
+                    [-2*wl,2*wl]])
 
     N_sensors = 50
     M_inputs = 100
     N_recon = 51
 
-    # E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
-    # P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
 
-    data = {'Num_dipoles' : len(dipoles), 'N_recon' : N_recon, 'N_sensors' : N_sensors, 'M_orientations' : M_inputs, 'Field of View' : FoV}
+    dipoles = np.array([[0.8*wl,0*wl,0*wl],
+                        [-0.8*wl,0*wl,0*wl],
+                        [0*wl,0.8*wl,0*wl],
+                        [0.8*wl,0*wl,0.8*wl],
+                        [-0.8*wl,0*wl,0.8*wl],
+                        [0*wl,0.8*wl,0.8*wl],
+                        [0.8*wl,0*wl,-0.8*wl],
+                        [-0.8*wl,0*wl,-0.8*wl],
+                        [0*wl,0.8*wl,-0.8*wl]])
 
-    for keys in data:
-        print(data[keys])
-    exit()
+    E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    save_stack(P,'C:/python/Master (Fishbowl)/MUSIC/images',data)
+    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
+
+
+    current = '50_dipoles'
+    dir = 'C:/python/Master (Fishbowl)/MUSIC/images'
+
+    data = {'Num_dipoles' : len(dipoles),
+            'N_recon' : N_recon,
+            'N_sensors' : N_sensors,
+            'M_orientations' : M_inputs,
+            'FoV' : FoV.tolist(),
+            'Dipole_positions' : dipoles.tolist()}
+
+    with open(dir+'/'+current+'/'+"test.json", 'w') as output:
+        json.dump(data, output, indent=4)
+
+    save_stack(P,dir+'/'+current+'/'+'image',dir+'/'+current+'/'+'image')
