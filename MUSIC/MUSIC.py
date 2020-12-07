@@ -2,7 +2,9 @@ import numpy as np
 from numba import njit, guvectorize, float64, complex128, int64
 from time import time
 from misc_functions import dyadic_green, high_inner
+import matplotlib.pyplot as plt
 
+# @njit
 def dyadic_green_FoV(sensors,xx,yy,zz,N_sensors,grid_size,k_0,presition='Double'):
     if presition == 'Double':
         I = np.identity(3)
@@ -16,7 +18,7 @@ def dyadic_green_FoV(sensors,xx,yy,zz,N_sensors,grid_size,k_0,presition='Double'
     r_x = sensors[0].reshape(N_sensors,1,1,1)-xx.reshape((1,grid_size,grid_size,grid_size))
     r_y = sensors[1].reshape(N_sensors,1,1,1)-yy.reshape((1,grid_size,grid_size,grid_size))
     r_z = sensors[2].reshape(N_sensors,1,1,1)-zz.reshape((1,grid_size,grid_size,grid_size))
-    r_p = np.array([r_x,r_y,r_z])
+    r_p = np.array((r_x,r_y,r_z))
 
     R = np.sqrt(np.sum((r_p)**2,axis=0))
     R_hat = ((r_p)/R)
@@ -47,11 +49,25 @@ def noise_space(E_field):
     noice_idx = np.where(dist<1)[0]
     N = len(noice_idx)
     D = len(E_field)-N
-    print(D)
+    # print(D)
 
     E_N = eigvecs[:,noice_idx]
 
-    return E_N
+    return np.ascontiguousarray(E_N)
+
+@njit
+def P_calc(A_fov,E_N):
+    a,b,c,d,e = A_fov.shape
+    A = A_fov.reshape(-1, A_fov.shape[-1])
+    B =  E_N.reshape(-1, E_N.shape[-1])
+
+    P_fov_1 = np.ascontiguousarray(np.conjugate(A)@B)
+    P_fov_2 = np.ascontiguousarray(A@np.conjugate(B))
+
+    P_fov_1 = P_fov_1.reshape(a,b,c,d,P_fov_1.shape[-1])
+    P_fov_2 = P_fov_2.reshape(a,b,c,d,P_fov_2.shape[-1])
+
+    return P_fov_1, P_fov_2
 
 # @njit(parallel=True)
 def P_estimation(E_field,sensors,N_recon,FoV,k_0):
@@ -64,10 +80,19 @@ def P_estimation(E_field,sensors,N_recon,FoV,k_0):
     z = np.linspace(FoV[2,0],FoV[2,1],N_recon)
 
     xx,yy,zz = np.meshgrid(x,y,z)
-    A_fov = dyadic_green_FoV(sensors,xx,yy,zz,N_sensors,N_recon,k_0).reshape(3*N_sensors,3,N_recon,N_recon,N_recon)
+    A_fov = dyadic_green_FoV(sensors,xx,yy,zz,N_sensors,N_recon,k_0)
+    A_fov = np.ascontiguousarray((A_fov.reshape(3*N_sensors,3,N_recon,N_recon,N_recon)).T)
 
-    P_fov_1 = np.ascontiguousarray(np.conjugate(A_fov.T)@E_N)
-    P_fov_2 = np.ascontiguousarray(A_fov.T@np.conjugate(E_N))
+    # P_fov_1 = np.ascontiguousarray(np.conjugate(A_fov)@E_N)
+    # # P_fov_1 = P_fov_1.reshape(-1, P_fov_1.shape[-1])
+    # P_fov_2 = np.ascontiguousarray(A_fov@np.conjugate(E_N))
+    # # P_fov_2 = P_fov_2.reshape(-1, P_fov_2.shape[-1])
+    #
+    #
+    # P_fov = (1/np.einsum('ijklm,ijklm->ijkl',P_fov_1,P_fov_2)).T
+    # P_fov = np.sum(P_fov,axis=0)
+
+    P_fov_1, P_fov_2 = P_calc(A_fov,E_N)
     P_fov = (1/np.einsum('ijklm,ijklm->ijkl',P_fov_1,P_fov_2)).T
     P_fov = np.sum(P_fov,axis=0)
 
@@ -99,5 +124,4 @@ def P_estimation(E_field,sensors,N_recon,FoV,k_0):
     #     P_fov_2 = np.ascontiguousarray(A_fov[:,i].T@np.conjugate(E_N))
     #     P_fov += (1/high_inner(P_fov_1,P_fov_2)).T
 
-    exit()
     return P_fov

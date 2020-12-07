@@ -18,7 +18,7 @@ def make_sensors(N_sensors,sensor_radius):
         x,y,z = x*sensor_radius, y*sensor_radius, z*sensor_radius
 
         sensors[i] = [x,y,z]
-    return sensors.T
+    return np.ascontiguousarray(sensors.T)
 
 #Slower if njit because of dyadic green dependecy
 def sensor_field(sensors,dipoles,polarizations,N_sensors,k_0):
