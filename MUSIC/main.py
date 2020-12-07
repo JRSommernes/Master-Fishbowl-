@@ -44,7 +44,7 @@ if __name__ == '__main__':
     P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
 
 
-    current = '50_dipoles'
+    current = '9_fov_dipoles'
     dir = 'C:/python/Master (Fishbowl)/MUSIC/images'
 
     data = {'Num_dipoles' : len(dipoles),
