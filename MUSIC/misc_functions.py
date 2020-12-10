@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from numba import njit
+import sys
 
 #Slower if njit
-def dyadic_green(sensors,dipole_pos,N_sensors,k_0):
+def dyadic_green(sensors,dipole_pos,k_0):
     r_p = sensors-dipole_pos.reshape(3,1)
 
     R = np.sqrt(np.sum((r_p)**2,axis=0))
@@ -47,9 +48,15 @@ def high_inner(A,B):
     return C
 
 def save_stack(I,dir,data):
-
-    # os.mkdir(dir+'/'+current+'/image')
-
     for i in range(I.shape[2]):
         im = Image.fromarray(np.abs(I[:,:,i]).astype(np.float64))
         im.save(dir+'/{}.tiff'.format(i))
+
+def loadbar(counter,len):
+    counter +=1
+    done = (counter*100)//len
+    sys.stdout.write('\r')
+    sys.stdout.write("[%-100s] %d%%" % ('='*done, done))
+    sys.stdout.flush()
+    if counter == len:
+        print('\n')
