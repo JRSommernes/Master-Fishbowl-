@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 from misc_functions import *
 from imaging import *
 from MUSIC import *
@@ -26,7 +27,7 @@ if __name__ == '__main__':
 
     N_sensors = 50
     M_inputs = 100
-    N_recon = 51
+    N_recon = 101
 
 
     dipoles = np.array([[0.8*wl,0*wl,0*wl],
@@ -41,8 +42,7 @@ if __name__ == '__main__':
 
     E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
-
+    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cuda')
 
     current = '9_dipoles'
     dir = 'images'
@@ -57,4 +57,4 @@ if __name__ == '__main__':
     with open(dir+'/'+current+'/'+"test.json", 'w') as output:
         json.dump(data, output, indent=4)
 
-    save_stack(P,dir+'/'+current+'/'+'image',dir+'/'+current+'/'+'image')
+    save_stack(P,dir+'/'+current+'/'+'image')

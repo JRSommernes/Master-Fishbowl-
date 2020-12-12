@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
@@ -46,10 +47,7 @@ def high_inner(A,B):
 
     return C
 
-def save_stack(I,dir,data):
-
-    # os.mkdir(dir+'/'+current+'/image')
-
+def save_stack(I,dir):
     for i in range(I.shape[2]):
         im = Image.fromarray(np.abs(I[:,:,i]).astype(np.float64))
         im.save(dir+'/{}.tiff'.format(i))
