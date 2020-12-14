@@ -1,7 +1,7 @@
 import numpy as np
 import cupy as cp
 from time import time
-from misc_functions import dyadic_green, high_inner
+from misc_functions import dyadic_green, high_inner, loadbar
 from multiprocessing import Pool
 from functools import partial
 
@@ -32,6 +32,8 @@ def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
     r_z = sensors[2].reshape(shape_1)-zz*np.ones(shape_2)
     r_p = np.array((r_x,r_y,r_z))
 
+# @njit
+def dyadic_green_FoV_2D(sensors,r_p,N_sensors,grid_size,k_0):
     R = np.sqrt(np.sum((r_p)**2,axis=0))
     R_hat = ((r_p)/R)
     RR_hat = np.einsum('iklm,jklm->ijklm',R_hat,R_hat)
@@ -43,6 +45,7 @@ def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
     expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
     expr_2 = np.broadcast_to(expr_2,RR_hat.shape)
 
+    I = np.identity(3)
     I = np.broadcast_to(I,(N_sensors,grid_size,grid_size,3,3))
     I = I.transpose(3,4,0,1,2)
 
@@ -81,13 +84,15 @@ def dyadic_green_FoV_2D_cuda(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
 
     return G
 
+# @njit(parallel = True)
 def P_calc_2D(A_fov,E_N):
     a,b,c,d = A_fov.shape
+
     A = A_fov.reshape(-1, A_fov.shape[-1])
     B =  E_N.reshape(-1, E_N.shape[-1])
 
-    P_fov_1 = np.ascontiguousarray(np.conjugate(A)@B)
-    P_fov_2 = np.ascontiguousarray(A@np.conjugate(B))
+    P_fov_1 = np.conjugate(A)@B
+    P_fov_2 = A@np.conjugate(B)
 
     P_fov_1 = P_fov_1.reshape(a,b,c,P_fov_1.shape[-1])
     P_fov_2 = P_fov_2.reshape(a,b,c,P_fov_2.shape[-1])

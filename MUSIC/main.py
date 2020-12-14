@@ -17,9 +17,7 @@ if __name__ == '__main__':
     omega = 2*np.pi*freq
 
     sensor_radius = 10*wl
-    # dipoles = np.array([[0.8*wl,0*wl,0*wl],
-    #                     [-0.8*wl,0*wl,0*wl],
-    #                     [0*wl,0.8*wl,0*wl]])
+    dipoles = np.array([[0*wl,0*wl,0*wl]])
 
     FoV = np.array([[-2*wl,2*wl],
                     [-2*wl,2*wl],
@@ -29,20 +27,36 @@ if __name__ == '__main__':
     M_inputs = 100
     N_recon = 101
 
+    # dipoles = np.array([[0.8*wl,0*wl,0*wl],
+    #                     [-0.8*wl,0*wl,0*wl],
+    #                     [0*wl,0.8*wl,0*wl],
+    #                     [0.8*wl,0*wl,0.8*wl],
+    #                     [-0.8*wl,0*wl,0.8*wl],
+    #                     [0*wl,0.8*wl,0.8*wl],
+    #                     [0.8*wl,0*wl,-0.8*wl],
+    #                     [-0.8*wl,0*wl,-0.8*wl],
+    #                     [0*wl,0.8*wl,-0.8*wl]])
 
-    dipoles = np.array([[0.8*wl,0*wl,0*wl],
-                        [-0.8*wl,0*wl,0*wl],
-                        [0*wl,0.8*wl,0*wl],
-                        [0.8*wl,0*wl,0.8*wl],
-                        [-0.8*wl,0*wl,0.8*wl],
-                        [0*wl,0.8*wl,0.8*wl],
-                        [0.8*wl,0*wl,-0.8*wl],
-                        [-0.8*wl,0*wl,-0.8*wl],
-                        [0*wl,0.8*wl,-0.8*wl]])
+    # dipoles = np.random.uniform(-1.5*wl,1.5*wl,(9,3))
 
     E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cuda')
+    n = 50
+    pos = np.array([[0,0,0]])
+    tmp = np.linspace(-0.1*wl,0.1*wl,n)
+    tmp_x = np.broadcast_to(tmp,(n,n)).flatten()
+    tmp_y = np.broadcast_to(tmp,(n,n)).T.flatten()
+    tmp_z = np.zeros_like(tmp_x)
+    tmp = np.array((tmp_x,tmp_y,tmp_z))
+    im = dyadic_green(tmp,pos,k_0)
+    im = im.reshape(n,n,3,3)
+    im = im[:,:,0]@np.array((1,0,0))
+    plt.imshow(np.log(np.abs(im)))
+    plt.show()
+    exit()
+
+    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
+
 
     current = '9_dipoles'
     dir = 'images'
