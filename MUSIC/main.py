@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 from misc_functions import *
 from imaging import *
 from MUSIC import *
@@ -70,4 +71,4 @@ if __name__ == '__main__':
     with open(dir+'/'+current+'/'+"test.json", 'w') as output:
         json.dump(data, output, indent=4)
 
-    save_stack(P,dir+'/'+current+'/'+'image',dir+'/'+current+'/'+'image')
+    save_stack(P,dir+'/'+current+'/'+'image')
