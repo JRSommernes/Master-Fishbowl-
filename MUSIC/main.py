@@ -1,8 +1,12 @@
 import numpy as np
-import cupy as cp
+try:
+    import cupy as cp
+except:
+    pass
 from misc_functions import *
 from imaging import *
 from MUSIC import *
+from fishbowl import *
 import json
 import os
 
@@ -17,7 +21,7 @@ if __name__ == '__main__':
     omega = 2*np.pi*freq
 
     sensor_radius = 10*wl
-    dipoles = np.array([[0*wl,0*wl,0*wl]])
+    # dipoles = np.array([[0*wl,0*wl,0*wl]])
 
     FoV = np.array([[-2*wl,2*wl],
                     [-2*wl,2*wl],
@@ -27,36 +31,34 @@ if __name__ == '__main__':
     M_inputs = 100
     N_recon = 101
 
-    # dipoles = np.array([[0.8*wl,0*wl,0*wl],
-    #                     [-0.8*wl,0*wl,0*wl],
-    #                     [0*wl,0.8*wl,0*wl],
-    #                     [0.8*wl,0*wl,0.8*wl],
-    #                     [-0.8*wl,0*wl,0.8*wl],
-    #                     [0*wl,0.8*wl,0.8*wl],
-    #                     [0.8*wl,0*wl,-0.8*wl],
-    #                     [-0.8*wl,0*wl,-0.8*wl],
-    #                     [0*wl,0.8*wl,-0.8*wl]])
+    dipoles = np.array([[0.8*wl,0*wl,0*wl],
+                        [-0.8*wl,0*wl,0*wl],
+                        [0*wl,0.8*wl,0*wl],
+                        [0.8*wl,0*wl,0.8*wl],
+                        [-0.8*wl,0*wl,0.8*wl],
+                        [0*wl,0.8*wl,0.8*wl],
+                        [0.8*wl,0*wl,-0.8*wl],
+                        [-0.8*wl,0*wl,-0.8*wl],
+                        [0*wl,0.8*wl,-0.8*wl]])
 
     # dipoles = np.random.uniform(-1.5*wl,1.5*wl,(9,3))
 
     E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    n = 50
-    pos = np.array([[0,0,0]])
-    tmp = np.linspace(-0.1*wl,0.1*wl,n)
-    tmp_x = np.broadcast_to(tmp,(n,n)).flatten()
-    tmp_y = np.broadcast_to(tmp,(n,n)).T.flatten()
-    tmp_z = np.zeros_like(tmp_x)
-    tmp = np.array((tmp_x,tmp_y,tmp_z))
-    im = dyadic_green(tmp,pos,k_0)
-    im = im.reshape(n,n,3,3)
-    im = im[:,:,0]@np.array((1,0,0))
-    plt.imshow(np.log(np.abs(im)))
-    plt.show()
+    # plot_sensor_field(sensors,E_sensors)
+
+    # P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cpu')
+
+    pos_list = np.array([[0,0,0],[0,0.8*wl,0],[wl,0,wl],[0.8*wl,0,0]])
+
+    for pos in pos_list:
+        T = fishbowl(E_sensors,sensors,wl,k_0,pos)
+        test_1 = np.sum(T[:3],axis=0)
+        test_2 = np.sum(T[3:6],axis=0)
+        plt.plot(np.abs(test_1),c='b')
+        plt.plot(np.abs(test_2),c='r')
+        plt.show()
     exit()
-
-    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
-
 
     current = '9_dipoles'
     dir = 'images'
