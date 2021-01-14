@@ -41,21 +41,7 @@ if __name__ == '__main__':
 
     E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    n = 50
-    pos = np.array([[0,0,0]])
-    tmp = np.linspace(-0.1*wl,0.1*wl,n)
-    tmp_x = np.broadcast_to(tmp,(n,n)).flatten()
-    tmp_y = np.broadcast_to(tmp,(n,n)).T.flatten()
-    tmp_z = np.zeros_like(tmp_x)
-    tmp = np.array((tmp_x,tmp_y,tmp_z))
-    im = dyadic_green(tmp,pos,k_0)
-    im = im.reshape(n,n,3,3)
-    im = im[:,:,0]@np.array((1,0,0))
-    plt.imshow(np.log(np.abs(im)))
-    plt.show()
-    exit()
-
-    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0)
+    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cuda')
 
 
     current = '9_dipoles'

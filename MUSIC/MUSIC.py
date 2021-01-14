@@ -24,17 +24,15 @@ def noise_space(E_field):
 def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
     I = np.identity(3)
 
-    shape_1 = np.append(N_sensors,np.ones(len(xx.shape),dtype=int))
-    shape_2 = np.append(1,xx.shape)
+    shape_1 = tuple([N_sensors]+[1]*len(xx.shape))
+    shape_2 = tuple([1]+list(xx.shape))
 
     r_x = sensors[0].reshape(shape_1)-xx.reshape(shape_2)
     r_y = sensors[1].reshape(shape_1)-yy.reshape(shape_2)
     r_z = sensors[2].reshape(shape_1)-zz*np.ones(shape_2)
     r_p = np.array((r_x,r_y,r_z))
 
-# @njit
-def dyadic_green_FoV_2D(sensors,r_p,N_sensors,grid_size,k_0):
-    R = np.sqrt(np.sum((r_p)**2,axis=0))
+    R = np.sqrt(cp.sum((r_p)**2,axis=0))
     R_hat = ((r_p)/R)
     RR_hat = np.einsum('iklm,jklm->ijklm',R_hat,R_hat)
 
@@ -45,13 +43,33 @@ def dyadic_green_FoV_2D(sensors,r_p,N_sensors,grid_size,k_0):
     expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
     expr_2 = np.broadcast_to(expr_2,RR_hat.shape)
 
-    I = np.identity(3)
     I = np.broadcast_to(I,(N_sensors,grid_size,grid_size,3,3))
     I = I.transpose(3,4,0,1,2)
 
     G = (expr_1*RR_hat + expr_2*I).transpose((2,0,1,3,4))
 
     return G
+
+# # @njit
+# def dyadic_green_FoV_2D(sensors,r_p,N_sensors,grid_size,k_0):
+#     R = np.sqrt(np.sum((r_p)**2,axis=0))
+#     R_hat = ((r_p)/R)
+#     RR_hat = np.einsum('iklm,jklm->ijklm',R_hat,R_hat)
+#
+#     g_R = np.exp(1j*k_0*R)/(4*np.pi*R)
+#     expr_1 = (3/(k_0**2*R**2)-3j/(k_0*R)-1)*g_R
+#     expr_1 = np.broadcast_to(expr_1,RR_hat.shape)
+#
+#     expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
+#     expr_2 = np.broadcast_to(expr_2,RR_hat.shape)
+#
+#     I = np.identity(3)
+#     I = np.broadcast_to(I,(N_sensors,grid_size,grid_size,3,3))
+#     I = I.transpose(3,4,0,1,2)
+#
+#     G = (expr_1*RR_hat + expr_2*I).transpose((2,0,1,3,4))
+#
+#     return G
 
 def dyadic_green_FoV_2D_cuda(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
     sensors = cp.array(sensors)
