@@ -1,5 +1,8 @@
 import numpy as np
-import cupy as cp
+try:
+    import cupy as cp
+except:
+    pass
 from time import time
 from misc_functions import dyadic_green, high_inner, loadbar
 from multiprocessing import Pool
@@ -21,18 +24,17 @@ def noise_space(E_field):
 
     return np.ascontiguousarray(E_N)
 
+# @njit
 def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
-    I = np.identity(3)
-
-    shape_1 = tuple([N_sensors]+[1]*len(xx.shape))
-    shape_2 = tuple([1]+list(xx.shape))
+    shape_1 = np.append(N_sensors,np.ones(len(xx.shape),dtype=int))
+    shape_2 = np.append(1,xx.shape)
 
     r_x = sensors[0].reshape(shape_1)-xx.reshape(shape_2)
     r_y = sensors[1].reshape(shape_1)-yy.reshape(shape_2)
     r_z = sensors[2].reshape(shape_1)-zz*np.ones(shape_2)
     r_p = np.array((r_x,r_y,r_z))
 
-    R = np.sqrt(cp.sum((r_p)**2,axis=0))
+    R = np.sqrt(np.sum((r_p)**2,axis=0))
     R_hat = ((r_p)/R)
     RR_hat = np.einsum('iklm,jklm->ijklm',R_hat,R_hat)
 

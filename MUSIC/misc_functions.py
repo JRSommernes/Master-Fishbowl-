@@ -1,5 +1,8 @@
 import numpy as np
-import cupy as cp
+try:
+    import cupy as cp
+except:
+    pass
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
@@ -47,6 +50,19 @@ def high_inner(A,B):
                 C[i,j,k] = A[i,j,k].dot(B[i,j,k])
 
     return C
+
+def plot_sensor_field(sensors,E_field):
+    fig = plt.figure()
+    ax = plt.axes(projection="3d")
+
+    x = sensors[0]
+    y = sensors[1]
+    z = sensors[2]
+
+    p = ax.scatter(x,y,z,c=E_field)
+    fig.colorbar(p)
+    ax.set_box_aspect((1,1,1))
+    plt.show()
 
 def save_stack(I,dir):
     for i in range(I.shape[2]):

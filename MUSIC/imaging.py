@@ -28,6 +28,12 @@ def sensor_field(sensors,dipoles,polarizations,N_sensors,k_0):
         G = dyadic_green(sensors,dipoles[i],k_0).reshape(3*N_sensors,3)
         E_tot += G@polarizations[i]
 
+    # E_x = E_tot[0::3]
+    # E_y = E_tot[1::3]
+    # E_z = E_tot[2::3]
+    #
+    # E_tot = np.append(E_x,np.append(E_y,E_z,axis=0),axis=0)
+
     return E_tot
 
 #Slower if njit because dependencies
@@ -36,9 +42,6 @@ def data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0):
 
     phi = np.random.uniform(0,2*np.pi,(N_dipoles,M_inputs))
     theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,M_inputs))
-
-    phi = np.zeros_like(phi)
-    theta = np.zeros_like(theta)
 
     polarizations = np.array([np.cos(phi)*np.sin(theta),
                               np.sin(phi)*np.sin(theta),
