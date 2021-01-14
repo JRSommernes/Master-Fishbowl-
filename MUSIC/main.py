@@ -52,11 +52,14 @@ if __name__ == '__main__':
     pos_list = np.array([[0,0,0],[0,0.8*wl,0],[wl,0,wl],[0.8*wl,0,0]])
 
     for pos in pos_list:
-        T = fishbowl(E_sensors,sensors,wl,k_0,pos)
-        test_1 = np.sum(T[:3],axis=0)
-        test_2 = np.sum(T[3:6],axis=0)
-        plt.plot(np.abs(test_1),c='b')
-        plt.plot(np.abs(test_2),c='r')
+        T1, T2 = fishbowl(E_sensors,sensors,wl,k_0,pos)
+        # test_1 = np.sum(T[:3],axis=0)
+        # test_2 = np.sum(T[3:6],axis=0)
+        # plt.plot(np.abs(test_1),c='b')
+        # plt.plot(np.abs(test_2),c='r')
+        for i in range(3):
+            for j in range(3):
+                plt.plot(np.abs(T1[i,j]))
         plt.show()
     exit()
 
