@@ -11,7 +11,6 @@ def correlation_space(E_field):
     noice_idx = np.where(dist<1)[0]
     N = len(noice_idx)
     D = len(E_field)-N
-    print(D//3)
     #
     # E_N = eigvecs[:,noice_idx]
 
@@ -33,43 +32,17 @@ def fishbowl(E_sensors,sensors,wl,k_0,pos):
     I_y = np.abs(E_y)**2
     I_z = np.abs(E_z)**2
 
-    # E_theta = np.arctan2(np.sqrt(I_x**2+I_y**2),I_z)
-    # E_phi = np.arctan2(I_y,I_z)
-
     theta = np.pi/2-theta
 
-    z_cont = np.sin(theta)
-    #x and y bit trickyer, theta and phi dependency
+    I_theta = I_z
+    I_phi = I_x+I_y
 
-    # print(sensors[:,2]/(10*wl),theta[2],phi[2])
-
-    test = np.array([theta,z_cont])
-    test = test[:, np.argsort( test[0] ) ]
-
-    plt.plot(test[0],c='r')
-    plt.plot(test[1],c='b')
-    plt.show()
-
-    # print(sensors[:,0])
-    # plt.plot(E_x[0],c='b')
-    # plt.plot(E_y[0],c='g')
-    # plt.plot(E_z[0],c='y')
-    # plt.plot(E_theta[20],c='r')
-    # plt.show()
-    exit()
-
-    test = correlation_space(E_x)
-
-    N_theta = correlation_space(E_theta)
-    N_phi = correlation_space(E_phi)
-    exit()
-
-
-
+    N_theta = correlation_space(I_theta)
+    N_phi = correlation_space(I_phi)
 
     G = dyadic_green(sensors,pos,k_0)
 
-    A = G#.reshape(-1, G.shape[-1])[0::3]
+    A = G
     B =  N_theta.reshape(-1, N_theta.shape[-1])
     C =  N_phi.reshape(-1, N_phi.shape[-1])
 
@@ -77,6 +50,10 @@ def fishbowl(E_sensors,sensors,wl,k_0,pos):
     T_2 = np.conjugate(A.T)@C
 
     T = np.append(T_1,T_2,axis=0)
+
+    # print(T.shape)
+    #
+    # exit()
 
     # print(A.shape,B.shape)
     # print(T_1.shape)
