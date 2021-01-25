@@ -1,5 +1,22 @@
 import numpy as np
 from misc_functions import *
+import torch
+import torch.nn as nn
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+class MLP(nn.Module):
+    def __init__(self,in_size):
+        super(MLP, self).__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(in_size, 512),
+            nn.Linear(512, 128),
+            nn.Linear(128,16),
+            nn.Linear(16,2)
+        )
+    def forward(self, x):
+        out = self.mlp(x)
+        return out
 
 def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
     I = np.identity(3)
@@ -40,7 +57,7 @@ def correlation_space(E_field):
     noice_idx = np.where(dist<1)[0]
     N = len(noice_idx)
     D = len(E_field)-N
-    # print(D//3)
+    # print(dist)
     #
     # E_N = eigvecs[:,noice_idx]
 
@@ -49,6 +66,10 @@ def correlation_space(E_field):
 def fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles):
     wl = 690e-9
     N_sensors = sensors.shape[1]
+
+    model = MLP(N_sensors*3*3*2*2).to(device)
+    optimizer = torch.optim.Adam(model.parameters())
+    criterion = nn.CrossEntropyLoss()
 
     E_x = E_sensors[0::3]
     E_y = E_sensors[1::3]
@@ -62,14 +83,27 @@ def fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles):
     I_x = np.abs(E_x)**2
     I_y = np.abs(E_y)**2
     I_z = np.abs(E_z)**2
+    I = I_x+I_y+I_z
 
     theta = np.pi/2-theta
 
     I_theta = I_z
     I_phi = I_x+I_y
 
+    # plot_sensor_field(sensors,I_x[:,0])
+    # plot_sensor_field(sensors,I_y[:,0])
+    # plot_sensor_field(sensors,I_z[:,0])
+    # plot_sensor_field(sensors,I_x[:,0]+I_y[:,0]+I_z[:,0])
+
+    pos = np.array([[0,0,0]])
+    A = dyadic_green(sensors,pos,k_0)
+
+    T = (A.T@I).reshape(3*3,1000)
+    print(np.linalg.matrix_rank(T.T@T))
+
     N_theta = correlation_space(I_theta)
     N_phi = correlation_space(I_phi)
+    exit()
 
 
     x = np.linspace(FoV[0,0],FoV[0,1],N_recon)
@@ -91,36 +125,96 @@ def fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles):
 
         labels[x_pos,y_pos,z_pos] = 1
 
+    model.train()
+    losses = []
     xx,yy = np.meshgrid(x,y)
     for i,zz in enumerate(z):
+        loadbar(i,len(z))
         labels_plane = labels[:,:,i]
         labels_plane = labels_plane.reshape(1,N_recon**2)
 
-        N_samples = np.random.randint(0,N_recon**2//100)
+        N_samples = np.random.randint(1,N_recon**2//100)
         sample_points = np.random.randint(0,N_recon**2,N_samples)
 
         if len(np.unique(labels_plane)) == 1:
-            continue
+            sample_points = np.sort(sample_points)
 
         else:
             dipole_pos = np.nonzero(labels_plane)[1]
-            sample_points = np.sort(np.append(sample_points,dipole_pos))
+            sample_points = np.unique(np.append(sample_points,dipole_pos))
+
+        sample_labels = labels_plane[:,sample_points]
+        sample_size = len(sample_points)
+
+        idx = np.where(sample_labels==1)[1]
+
+        tmp_1 = np.ones(sample_size)
+        tmp_2 = np.zeros(sample_size)
+        tmp_1[idx] = 0
+        tmp_2[idx] = 1
+        tmp = np.array([tmp_1,tmp_2]).T
+
+        G = dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,N_recon,k_0)
+        G = G.transpose((3,4,1,2,0)).reshape(N_recon**2,3,3,N_sensors)
+        G = G[sample_points]
+
+        T_1 = (G@N_theta).reshape(sample_size,3**2*N_sensors)
+        T_2 = (G@N_phi).reshape(sample_size,3**2*N_sensors)
+        T = np.append(T_1,T_2,axis=1)
+
+        T_r = T.real
+        T_i = T.imag
+        T = np.append(T_r,T_i,axis=1).astype(np.float32)
+
+        output = model(torch.from_numpy(T))
+        y = torch.from_numpy(sample_labels.flatten()).long()
 
 
 
+        loss = criterion(output, y)
+        loss.backward()
+        losses.append(loss.item())
+
+        optimizer.step()
+
+
+    tmp = [1000, 3080, 4000, 5120, 7120, 10000]
+    G = dyadic_green_FoV_2D(sensors,xx,yy,30,N_sensors,N_recon,k_0)
+    G = G.transpose((3,4,1,2,0)).reshape(N_recon**2,3,3,N_sensors)
+    G = G[tmp]
+
+    T_1 = (G@N_theta).reshape(len(tmp),3**2*N_sensors)
+    T_2 = (G@N_phi).reshape(len(tmp),3**2*N_sensors)
+    T = np.append(T_1,T_2,axis=1)
+
+    T_r = T.real
+    T_i = T.imag
+    T = np.append(T_r,T_i,axis=1).astype(np.float32)
+    test = model(torch.from_numpy(T))
+
+    print(test)
+
+    exit()
+
+        # if len(np.unique(labels_plane)) == 1:
+        #     if np.random.randint(0,10) < 7:
+        #         continue
         #
-        #     G = dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,N_recon,k_0)
-        #     G = G.transpose((3,4,1,2,0))
+        # G = dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,N_recon,k_0)
+        # G = G.transpose((3,4,1,2,0))
         #
-        #     T_1 = (G@N_theta).reshape(N_recon**2,3**2*N_sensors)
-        #     T_2 = (G@N_phi).reshape(N_recon**2,3**2*N_sensors)
-        #     T = np.append(T_1,T_2,axis=1)
+        # T_1 = (G@N_theta).reshape(N_recon**2,3**2*N_sensors)
+        # T_2 = (G@N_phi).reshape(N_recon**2,3**2*N_sensors)
+        # T = np.append(T_1,T_2,axis=1)
         #
-        #     batch_size = 256
-        #     N_batch = int(np.ceil(T.shape[0]/batch_size))
+        # batch_size = 256
+        # N_batch = int(np.ceil(T.shape[0]/batch_size))
         #
-        #     for j in range(N_batch):
-        #         batch = T[j*batch_size:(j+1)*batch_size]
+        # print(T.shape,labels_plane.shape)
+        # exit()
+        #
+        # for j in range(N_batch):
+        #     batch = T[j*batch_size:(j+1)*batch_size]
 
 
     exit()
@@ -134,8 +228,6 @@ def fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles):
     # print(A.shape,B.shape)
     # print(T_1.shape)
     # exit()
-
-    return T_1,T_2
 
     # return T
 

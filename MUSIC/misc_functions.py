@@ -27,6 +27,15 @@ def dyadic_green(sensors,dipole_pos,k_0):
 
     return G
 
+def scalar_green(sensors,dipole_pos,k_0):
+    r_p = sensors-dipole_pos.reshape(3,1)
+
+    R = np.sqrt(np.sum((r_p)**2,axis=0))
+
+    g_R = np.exp(1j*k_0*R)/(4*np.pi*R)
+
+    return g_R
+
 def plot_sensors(sensors,wl):
     coordinates = sensors/wl
     fig = plt.figure()

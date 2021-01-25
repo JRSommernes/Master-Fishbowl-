@@ -21,27 +21,27 @@ if __name__ == '__main__':
     omega = 2*np.pi*freq
 
     sensor_radius = 10*wl
-    # dipoles = np.array([[0*wl,0*wl,0*wl]])
+    dipoles = np.array([[0*wl,0*wl,0*wl]])
 
     FoV = np.array([[-2*wl,2*wl],
                     [-2*wl,2*wl],
                     [-2*wl,2*wl]])
 
-    N_sensors = 50
-    M_inputs = 100
+    N_sensors = 500
+    M_inputs = 1000
     N_recon = 101
 
-    dipoles = np.array([[0.8*wl,0*wl,0*wl],
-                        [-0.8*wl,0*wl,0*wl],
-                        [0*wl,0.8*wl,0*wl],
-                        [0.8*wl,0*wl,0.8*wl],
-                        [-0.8*wl,0*wl,0.8*wl],
-                        [0*wl,0.8*wl,0.8*wl],
-                        [0.8*wl,0*wl,-0.8*wl],
-                        [-0.8*wl,0*wl,-0.8*wl],
-                        [0*wl,0.8*wl,-0.8*wl]])
+    # dipoles = np.array([[0.8*wl,0*wl,0*wl],
+    #                     [-0.8*wl,0*wl,0*wl],
+    #                     [0*wl,0.8*wl,0*wl],
+    #                     [0.8*wl,0*wl,0.8*wl],
+    #                     [-0.8*wl,0*wl,0.8*wl],
+    #                     [0*wl,0.8*wl,0.8*wl],
+    #                     [0.8*wl,0*wl,-0.8*wl],
+    #                     [-0.8*wl,0*wl,-0.8*wl],
+    #                     [0*wl,0.8*wl,-0.8*wl]])
 
-    # dipoles = np.random.uniform(-1.5*wl,1.5*wl,(9,3))
+    dipoles = np.random.uniform(-1.5*wl,1.5*wl,(5,3))
 
     E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
