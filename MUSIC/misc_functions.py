@@ -80,7 +80,7 @@ def save_stack(I,dir):
 
 def loadbar(counter,len):
     counter +=1
-    done = (counter*100)//len
+    done = (counter*100)//len+1
     sys.stdout.write('\r')
     sys.stdout.write("[%-100s] %d%%" % ('='*done, done))
     sys.stdout.flush()
