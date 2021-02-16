@@ -41,7 +41,7 @@ def compoMatrix4Inv(mat_am,xTrue):
         AmT = Am.T
         AL[m] = Am.flatten()
 
-    XTrue = xTrue.reshape(25,1)@np.conj(xTrue).reshape(1,25)
+    XTrue = xTrue.reshape(-1,1)@np.conj(xTrue).reshape(1,-1)
 
     nn = np.arange(1,N)
     NN = np.sum(nn)
@@ -70,6 +70,10 @@ def compoMatrix4Inv(mat_am,xTrue):
     return ALri,d
 
 def compGradient(xLri,ALri,gamma,d,b):
+    print(ALri.shape)
+    exit()
+
+
     g = 2*(ALri.T)@ALri@xLri-2*(ALri.T)@b+(gamma*d).reshape(-1,1)
     return g
 

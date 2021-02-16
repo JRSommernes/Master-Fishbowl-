@@ -40,9 +40,11 @@ def compuStepSize(x,g,mat_am,b):
 
 def algQuadraticInv(mat_am,b):
     maxIte = int(1e4)
+    # maxIte = 100
     N = mat_am.shape[1]
     randVal = np.random.uniform(-30,30,size=(N,2))
-    randVal = np.ones_like(randVal)
+    # randVal = np.zeros((N,2))
+    # randVal = np.ones_like(randVal)
     i_x = (randVal[:,0] + 1j*randVal[:,1]).reshape(-1,1)
     thre_absErr = 1e-3
     thre_relErr = 1e-5
@@ -88,22 +90,27 @@ def algQuadraticInv(mat_am,b):
 
     return xEst
 
-# if __name__ == '__main__':
-#     mat_am, b, xTrue = generateSimulatedField()
-#
-#     xEst = algQuadraticInv(mat_am,b)
-#
-#     normalized_xTrue = xTrue*np.conj(xTrue[0])/np.abs(np.conj(xTrue[0]))
-#     normalized_xEst = xEst*np.conj(xEst[0])/np.abs(np.conj(xEst[0]))
-#     N0 = (len(xEst)-1)/2
-#     vecn = np.arange(-N0,N0+1)
-#
-#     plt.plot(vecn,np.angle(normalized_xTrue))
-#     plt.plot(vecn,np.angle(normalized_xEst),'*')
-#     plt.xlim([-12, 12])
-#     plt.show()
-#
-#     plt.plot(vecn,np.abs(normalized_xTrue))
-#     plt.plot(vecn,np.abs(normalized_xEst),'*')
-#     plt.xlim([-12, 12])
-#     plt.show()
+if __name__ == '__main__':
+    mat_am, b, xTrue = generateSimulatedField()
+
+    print(mat_am.shape,b.shape,xTrue.shape)
+    print(mat_am.dtype,b.dtype,xTrue.dtype)
+    exit()
+
+
+    xEst = algQuadraticInv(mat_am,b)
+
+    normalized_xTrue = xTrue*np.conj(xTrue[0])/np.abs(np.conj(xTrue[0]))
+    normalized_xEst = xEst*np.conj(xEst[0])/np.abs(np.conj(xEst[0]))
+    N0 = (len(xEst)-1)/2
+    vecn = np.arange(-N0,N0+1)
+
+    plt.plot(vecn,np.angle(normalized_xTrue),'o')
+    plt.plot(vecn,np.angle(normalized_xEst),'*')
+    plt.xlim([-12, 12])
+    plt.show()
+
+    plt.plot(vecn,np.abs(normalized_xTrue),'o')
+    plt.plot(vecn,np.abs(normalized_xEst),'*')
+    plt.xlim([-12, 12])
+    plt.show()
