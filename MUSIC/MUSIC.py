@@ -5,8 +5,6 @@ except:
     pass
 from time import time
 from misc_functions import dyadic_green, high_inner, loadbar
-from multiprocessing import Pool
-from functools import partial
 
 #Same speed when njit
 def noise_space(E_field):
@@ -26,6 +24,7 @@ def noise_space(E_field):
 
 # @njit
 def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
+    I = np.identity(3)
     shape_1 = np.append(N_sensors,np.ones(len(xx.shape),dtype=int))
     shape_2 = np.append(1,xx.shape)
 

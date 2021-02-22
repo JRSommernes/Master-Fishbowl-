@@ -9,6 +9,7 @@ from MUSIC import *
 from fishbowl import *
 import json
 import os
+from intensity_only_MUSIC import *
 
 if __name__ == '__main__':
     eps_0 = 8.8541878128e-12
@@ -21,14 +22,15 @@ if __name__ == '__main__':
     omega = 2*np.pi*freq
 
     sensor_radius = 10*wl
-    dipoles = np.array([[0*wl,0*wl,0*wl]])
+    dipoles = np.array([[0*wl,-2*wl,0*wl]])
+    # dipoles = np.array([[0.8*wl,-1.2*wl,0*wl],[-1.8*wl,0*wl,0*wl]])
 
     FoV = np.array([[-2*wl,2*wl],
                     [-2*wl,2*wl],
                     [-2*wl,2*wl]])
 
-    N_sensors = 500
-    M_inputs = 1000
+    N_sensors = 50
+    M_inputs = 100
     N_recon = 101
 
     # dipoles = np.array([[0.8*wl,0*wl,0*wl],
@@ -41,7 +43,7 @@ if __name__ == '__main__':
     #                     [-0.8*wl,0*wl,-0.8*wl],
     #                     [0*wl,0.8*wl,-0.8*wl]])
 
-    dipoles = np.random.uniform(-1.5*wl,1.5*wl,(5,3))
+    # dipoles = np.random.uniform(-1.5*wl,1.5*wl,(5,3))
 
     E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
@@ -49,9 +51,13 @@ if __name__ == '__main__':
 
     # P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cpu')
 
+    I = np.abs(E_sensors)**2
 
-    fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles)
+    intensity_P_estimation(I,sensors,N_recon,FoV,k_0)
     exit()
+
+    # fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles)
+    # exit()
 
     current = '9_dipoles'
     dir = 'images'
