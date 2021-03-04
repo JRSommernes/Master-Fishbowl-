@@ -47,7 +47,8 @@ def plot_sensors(sensors,wl):
     ax.set_xlabel('x-position [wavelengths]')
     ax.set_ylabel('y-position [wavelengths]')
     ax.set_zlabel('z-position [wavelengths]')
-    plt.savefig('Detector_locations')
+    # plt.savefig('Detector_locations')
+    plt.show()
 
 @njit(parallel=True)
 def high_inner(A,B):

@@ -37,8 +37,8 @@ def data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0):
     phi = np.random.uniform(0,2*np.pi,(N_dipoles,M_inputs))
     theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,M_inputs))
 
-    # phi = np.ones_like(phi)
-    # theta = np.ones_like(theta)
+    phi = np.ones_like(phi)
+    theta = np.ones_like(theta)
 
     polarizations = np.array([np.cos(phi)*np.sin(theta),
                               np.sin(phi)*np.sin(theta),

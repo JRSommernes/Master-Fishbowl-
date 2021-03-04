@@ -50,32 +50,82 @@ def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
 
     return G
 
-def intensity_P_estimation(I,sensors,N_recon,FoV,k_0):
+def test_func(pos,sensors,k_0):
+
+    r_p = sensors-pos
+
+    R = np.sqrt(np.sum((r_p)**2,axis=0))
+    R_hat = ((r_p)/R)
+
+    RR_hat = np.einsum('ik,jk->ijk',R_hat,R_hat)
+
+    g_R = np.exp(1j*k_0*R)/(4*np.pi*R)
+    expr_1 = (3/(k_0**2*R**2)-3j/(k_0*R)-1)*g_R
+    expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
+
+    I = np.identity(3)
+    G = (expr_1*RR_hat + expr_2*I.reshape(3,3,1)).T
+
+
+
+def intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E):
     N_sensors = sensors.shape[1]
 
     I_x = I[:I.shape[0]//3]
 
     I_N = noise_space(I_x)
 
+
+
+    wl = 690e-9
+    # pos = np.array([0*wl,-1*wl,0*wl])
+    # G = dyadic_green(sensors,pos,k_0)
+    # Gx = G[:,0]
+    # Gy = G[:,1]
+    # Gz = G[:,2]
+    # G = np.append(np.append(Gx,Gy,axis=0),Gz,axis=0)
+    # I_G = np.abs(G)**2
+
+
+
+
+
+
+
+
     x = np.linspace(FoV[0][0],FoV[0][1],N_recon)
     y = np.linspace(FoV[1][0],FoV[2][1],N_recon)
     z = np.linspace(FoV[1][0],FoV[2][1],N_recon)
     xx,yy = np.meshgrid(x,y)
 
+    x_d = np.where(xx/wl==0)[1][0]
+    y_d = np.where(yy/wl==-1)[0][0]
+    z_d = np.where(z/wl==0)[0][0]
+
     G = dyadic_green_FoV_2D(sensors,xx,yy,z[N_recon//2],N_sensors,N_recon,k_0)[:,0]
 
-    print(G.shape,I_N.shape)
+    x_m = np.zeros((N_recon,N_recon,3))
+    x_m[x_d,y_d] = [0.45464871,0.70807342,0.54030231]
 
-    # test = G[:,0]
-    # test = np.einsum('ikl,jkl->ijkl',test,test).transpose(2,3,0,1)
+    X = test = np.einsum('ijk,ijl->ijkl',x_m,x_m).reshape(101,101,1,3,3)
+
+    test = G.transpose(2,3,0,1)
+    test = np.einsum('ijkl,ijkm->ijklm',test,test)
+    # test = test.reshape(*test.shape[:3],-1)
+
+    # print(test.shape,X.shape)
+    # Tr = np.matmul(test,X)
+    # print(Tr.shape)
+    # Tr = np.einsum('ijkll,ijkll->ijk',Tr,Tr)
+    # print(Tr.shape)
+    # print(I.shape)
+
+    # A = test.transpose(0,1,3,2)@I_N.conj()
+    # B = test.transpose(0,1,3,2).conj()@I_N
+    # C = np.matmul(A,B.transpose(0,1,3,2))
     #
-    # S = I_x@I_x.T
-    #
-    # something = test@I_N
-    # something = np.einsum('ijkl,ijkl->ijk',something,something)
-    # something = np.sum(something,axis=2).real
-    #
-    # plt.imshow(something.real)
+    # test_im = np.sum(C,axis=(2,3))
+    # plt.imshow(np.abs(test_im))
     # plt.show()
     #
     # exit()

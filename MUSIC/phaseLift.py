@@ -166,6 +166,7 @@ def algPhaseLift(ALri,d,b):
 
 if __name__ == '__main__':
     mat_am, b, xTrue = generateSimulatedField()
+    print(mat_am.shape)
 
     ALri, d = compoMatrix4Inv(mat_am,xTrue)
 
