@@ -11,6 +11,7 @@ import json
 import os
 from intensity_only_MUSIC import *
 from scattering_imaging import *
+from intensity_scattering_MUSIC import *
 
 if __name__ == '__main__':
     eps_0 = 8.8541878128e-12
@@ -21,6 +22,9 @@ if __name__ == '__main__':
     freq = c_0/wl
     k_0 = 2*np.pi*freq*np.sqrt(eps_0*mu_0)
     omega = 2*np.pi*freq
+
+    n0 = 1
+    n1 = 1.33
 
     sensor_radius = 10*wl
     dipoles = np.array([[0*wl, -1*wl,0*wl]])
@@ -49,8 +53,7 @@ if __name__ == '__main__':
 
     # E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0)
-
+    E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
 
     # plot_sensor_field(sensors,E_sensors)
 
@@ -58,7 +61,8 @@ if __name__ == '__main__':
 
     I = np.abs(E_sensors)**2
 
-    intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E_sensors)
+    # intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E_sensors)
+    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors)
     exit()
 
     # fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles)
