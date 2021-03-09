@@ -26,18 +26,18 @@ if __name__ == '__main__':
     n0 = 1
     n1 = 1.33
 
-    sensor_radius = 10*wl
-    dipoles = np.array([[0*wl, -1*wl,0*wl]])
-    # dipoles = np.array([[0.8*wl,-1.2*wl,0*wl],[-1.8*wl,0*wl,0*wl]])
+    sensor_radius = 100*wl
+    dipoles = np.array([[0*wl, 1*wl, 0*wl]])
+    # dipoles = np.array([[0*wl,-1*wl,0*wl],[0*wl,1*wl,0*wl]])
 
     FoV = np.array([[-2*wl,2*wl],
                     [-2*wl,2*wl],
                     [-2*wl,2*wl]])
 
     N_sensors = 50
-    N_emitters = 10
+    N_emitters = 100
     M_inputs = 100
-    N_recon = 101
+    N_recon = 51
 
     # dipoles = np.array([[0.8*wl,0*wl,0*wl],
     #                     [-0.8*wl,0*wl,0*wl],
@@ -53,20 +53,18 @@ if __name__ == '__main__':
 
     # E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
 
-    E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
-
     # plot_sensor_field(sensors,E_sensors)
 
     # P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cpu')
 
-    I = np.abs(E_sensors)**2
+    # I = np.abs(E_sensors)**2
 
     # intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E_sensors)
+
+    E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
+    I = np.abs(E_sensors)**2
     scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors)
     exit()
-
-    # fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles)
-    # exit()
 
     current = '9_dipoles'
     dir = 'images'
