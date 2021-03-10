@@ -6,7 +6,7 @@ except:
 from misc_functions import *
 from imaging import *
 from MUSIC import *
-from fishbowl import *
+# from fishbowl import *
 import json
 import os
 from intensity_only_MUSIC import *
@@ -61,9 +61,9 @@ if __name__ == '__main__':
 
     # intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E_sensors)
 
-    E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
-    I = np.abs(E_sensors)**2
-    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors,dipoles)
+    E_scatter,E_incident,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
+    I = np.abs(E_scatter+E_incident)**2
+    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_scatter,E_incident,dipoles)
     exit()
 
     current = '9_dipoles'
