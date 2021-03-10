@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     sensor_radius = 100*wl
     dipoles = np.array([[0*wl, 1*wl, 0*wl]])
-    # dipoles = np.array([[0*wl,-1*wl,0*wl],[0*wl,1*wl,0*wl]])
+    dipoles = np.array([[1*wl,-1*wl,0*wl],[-1*wl,1*wl,0*wl]])
 
     FoV = np.array([[-2*wl,2*wl],
                     [-2*wl,2*wl],
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     N_sensors = 50
     N_emitters = 100
     M_inputs = 100
-    N_recon = 51
+    N_recon = 49
 
     # dipoles = np.array([[0.8*wl,0*wl,0*wl],
     #                     [-0.8*wl,0*wl,0*wl],
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
     I = np.abs(E_sensors)**2
-    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors)
+    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors,dipoles)
     exit()
 
     current = '9_dipoles'

@@ -71,12 +71,12 @@ def scattered_field(dipoles,emitter_loc,sensors,k_0,n_0,n_1):
     return E_s
 
 #Slower if njit because of dyadic green dependecy
-def sensor_field(sensors,emitters,dipoles,N_sensors,N_emitters,k_0,n1,n0):
+def sensor_field(sensors,emitters,dipoles,N_sensors,N_emitters,k_0,n0,n1):
     M_inputs = 3*N_emitters-2
     E_tot = np.zeros((N_sensors,M_inputs),dtype=np.complex128)
 
     for i,emitter_loc in enumerate(emitters):
-        E_s = scattered_field(dipoles,emitter_loc,sensors,k_0,n1,n0).T.flatten()
+        E_s = scattered_field(dipoles,emitter_loc,sensors,k_0,n0,n1).T.flatten()
         # E_i = free_space_green(sensors,emitter_loc,k_0).T.flatten()
         E_tot[:,i] = E_s#+E_i
 
@@ -104,6 +104,6 @@ def scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0):
     sensors = make_sensors(N_sensors,sensor_radius)
     emitters = make_emitters(N_emitters,sensor_radius)
 
-    E_sensors = sensor_field(sensors,emitters,dipoles,N_sensors,N_emitters,k_0,n1,n0)
+    E_sensors = sensor_field(sensors,emitters,dipoles,N_sensors,N_emitters,k_0,n0,n1)
 
     return E_sensors, sensors, emitters
