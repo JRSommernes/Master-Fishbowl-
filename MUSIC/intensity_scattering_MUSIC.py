@@ -40,7 +40,33 @@ def free_space_green_sensors(sensors,emitter_pos,k_0):
     return g_R
 
 def optimize_Es(E_s,E_i,I):
-    return np.sum(I - np.abs(E_s+E_i)**2)
+    return I - np.abs(E_s+E_i)**2
+
+def find_E_s(E_i,I,E_s):
+    E_s_guess = np.zeros_like(E_i)
+    for n in range(len(I)):
+        real_closest = 0
+        imag_closest = 0
+
+        real_err = np.ones_like(I)*5000000
+        imag_err = np.ones_like(I)*5000000
+
+
+
+        real_guess = E_s[0].real
+        imag_guess = E_s[0].imag
+        real_guess = np.linspace(real_guess-real_guess*0.1,real_guess+real_guess*0.1,1000)
+        imag_guess = np.linspace(imag_guess-imag_guess*0.1,imag_guess+imag_guess*0.1,1000)
+
+        rr,ii = np.meshgrid(real_guess,imag_guess)
+        gg = rr+ii*1j
+        im = optimize_Es(gg,E_i[0],I[0])
+
+        plt.imshow(im)
+        plt.show()
+
+        # print(real_closest,imag_closest,imag_guess,E_s[0])
+        exit()
 
 def scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_scatter,E_incident,dipoles):
     N_sensors = sensors.shape[1]
@@ -91,10 +117,8 @@ def scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_scatter,E_incident,dipole
     for m in range(M):
         E_m[m] = E_tot[0].conj()*E_tot[m]
 
+    find_E_s(E_i[0],I[:M,0].T,E_s[0])
 
-    print(optimize_Es(E_s[0],E_i[0],I[:M,0].T))
-    guess = minimize(optimize_Es,E_s[1],args=(E_i[0],I[:M,0].T))
-    print(guess)
     exit()
 
     B = B-E_si-E_is-E_ii
