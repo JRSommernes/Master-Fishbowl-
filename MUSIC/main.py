@@ -63,14 +63,14 @@ if __name__ == '__main__':
     # intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E_sensors)
 
     #Working scattering MUSIC
-    # E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
+    E_scattering,E_incident,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
+    I = np.abs(E_scattering+E_incident)**2
+    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_scattering,E_incident,dipoles)
+
+
+    # E_sensors,sensors,emitters = vectorial_scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
     # I = np.abs(E_sensors)**2
     # scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors,dipoles)
-
-
-    E_sensors,sensors,emitters = vectorial_scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
-    I = np.abs(E_sensors)**2
-    scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors,dipoles)
     exit()
 
     current = '9_dipoles'

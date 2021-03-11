@@ -67,24 +67,24 @@ def sensor_field(sensors,emitters,dipoles,N_sensors,N_emitters,k_0,n0,n1):
 
     for i,emitter_loc in enumerate(emitters):
         E_s = scattered_field(dipoles,emitter_loc,sensors,k_0,n0,n1).T.flatten()
-        E_i = incident_wave(sensors,emitter_loc,k_0).T.flatten()
+        E_i = scattered_field_calc(sensors,emitter_loc,k_0).T.flatten()
         E_scatter[:,i] = E_s
         E_incident[:,i] = E_i
 
     for i,emitter_loc in enumerate(emitters[1:]):
-        E_s_1 = scattered_field(dipoles,emitters[0],sensors,k_0,n1,n0).T.flatten()
-        E_s_n = scattered_field(dipoles,emitter_loc,sensors,k_0,n1,n0).T.flatten()
-        E_i_1 = incident_wave(sensors,emitters[0],k_0).T.flatten()
-        E_i_n = incident_wave(sensors,emitter_loc,k_0).T.flatten()
+        E_s_1 = scattered_field(dipoles,emitters[0],sensors,k_0,n0,n1).T.flatten()
+        E_s_n = scattered_field(dipoles,emitter_loc,sensors,k_0,n0,n1).T.flatten()
+        E_i_1 = scattered_field_calc(sensors,emitters[0],k_0).T.flatten()
+        E_i_n = scattered_field_calc(sensors,emitter_loc,k_0).T.flatten()
         E_scatter[:,N_emitters+i] = E_s_1+E_s_n
         E_incident[:,N_emitters+i] = E_i_1+E_i_n
 
 
     for i,emitter_loc in enumerate(emitters[1:]):
-        E_s_1 = scattered_field(dipoles,emitters[0],sensors,k_0,n1,n0).T.flatten()
-        E_s_n = scattered_field(dipoles,emitter_loc,sensors,k_0,n1,n0).T.flatten()
-        E_i_1 = incident_wave(sensors,emitters[0],k_0).T.flatten()
-        E_i_n = incident_wave(sensors,emitter_loc,k_0).T.flatten()
+        E_s_1 = scattered_field(dipoles,emitters[0],sensors,k_0,n0,n1).T.flatten()
+        E_s_n = scattered_field(dipoles,emitter_loc,sensors,k_0,n0,n1).T.flatten()
+        E_i_1 = scattered_field_calc(sensors,emitters[0],k_0).T.flatten()
+        E_i_n = scattered_field_calc(sensors,emitter_loc,k_0).T.flatten()
         E_scatter[:,2*N_emitters-1+i] = E_s_1+1j*E_s_n
         E_incident[:,2*N_emitters-1+i] = E_i_1+1j*E_i_n
 
