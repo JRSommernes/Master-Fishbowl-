@@ -6,7 +6,7 @@ except:
 from misc_functions import *
 from imaging import *
 from MUSIC import *
-from fishbowl import *
+# from fishbowl import *
 import json
 import os
 from intensity_only_MUSIC import *
