@@ -12,6 +12,7 @@ import os
 from intensity_only_MUSIC import *
 from scattering_imaging import *
 from intensity_scattering_MUSIC import *
+from vectorial_scattering import *
 
 if __name__ == '__main__':
     eps_0 = 8.8541878128e-12
@@ -61,7 +62,13 @@ if __name__ == '__main__':
 
     # intensity_P_estimation(I,sensors,N_recon,FoV,k_0,E_sensors)
 
-    E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
+    #Working scattering MUSIC
+    # E_sensors,sensors,emitters = scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
+    # I = np.abs(E_sensors)**2
+    # scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors,dipoles)
+
+
+    E_sensors,sensors,emitters = vectorial_scattering_data(dipoles,sensor_radius,N_sensors,N_emitters,k_0,n1,n0)
     I = np.abs(E_sensors)**2
     scatter_MUSIC(I,sensors,emitters,N_recon,FoV,k_0,E_sensors,dipoles)
     exit()
