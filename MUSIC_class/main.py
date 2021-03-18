@@ -6,9 +6,11 @@ from scipy.constants import epsilon_0, mu_0, c
 
 if __name__ == '__main__':
     Mag = 60
-    N_sensors = 61**2
+    N_sensors = 10**2
+    M_timepoints = 50
+    N_recon = 31
 
-    wl = 561e-9
+    wl = 690e-9
     freq = c/wl
 
     n_obj = 1.33
@@ -39,6 +41,6 @@ if __name__ == '__main__':
 
     mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles)
 
-    z_cam = 0
     FoV = 6
-    mic.image_field(z_cam,FoV)
+    mic.create_image_stack(FoV,M_timepoints)
+    mic.reconstruct_image(FoV,N_recon)
