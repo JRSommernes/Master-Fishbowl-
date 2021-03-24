@@ -2,13 +2,33 @@ import numpy as np
 from microscope import Microscope
 import matplotlib.pyplot as plt
 from scipy.constants import epsilon_0, mu_0, c
+from time import time
+import json, os
+from PIL import Image
+
+# if __name__ == '__main__':
+#     dir = 'C:/Users/jso085/github/Master-Fishbowl-/MUSIC_class/images/microscope/1616588051/'
+#     Im = np.zeros((11,11,11))
+#     for i in range(11):
+#         name = '{}.tiff'.format(i)
+#         im = Image.open(dir+name)
+#         Im[:,:,i] = np.array(im)
+#
+#     min = Im.min()
+#     max = Im.max()
+#     for i in range(11):
+#         plt.imshow(Im[i],vmin=min,vmax=max)
+#         plt.title('z = {}'.format(i))
+#         plt.show()
+
+
 
 
 if __name__ == '__main__':
     Mag = 60
-    N_sensors = 10**2
+    N_sensors = 5**2
     M_timepoints = 50
-    N_recon = 31
+    N_recon = 11
 
     wl = 690e-9
     freq = c/wl
@@ -37,10 +57,18 @@ if __name__ == '__main__':
     NA = 1.2
     z_Interface_sub = -30e-9
 
-    dipoles = np.array([[0.4*wl,0.4*wl,0.4*wl],[-0.4*wl,0.4*wl,0.4*wl]])
+    FoV = 1
+    camera_size = 6
+
+    dipoles = np.array([[0.4*wl,0*wl,0*wl],[0*wl,0*wl,0*wl]])
 
     mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles)
 
-    FoV = 6
-    mic.create_image_stack(FoV,M_timepoints)
-    mic.reconstruct_image(FoV,N_recon)
+
+    mic.create_image_stack(camera_size,M_timepoints)
+    mic.reconstruct_image(FoV,camera_size,N_recon,dipoles[0,2])
+
+    # dir = 'C:/Users/jso085/github/Master-Fishbowl-/MUSIC_class/images/microscope'
+    # mic.save_image_stack(dir)
+    plt.imshow(np.abs(mic.P))
+    plt.show()

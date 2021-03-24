@@ -1,0 +1,19 @@
+{
+    "Num_dipoles": 2,
+    "N_recon": 11,
+    "N_sensors": 25,
+    "M_orientations": 50,
+    "FoV": 1,
+    "Dipole_positions": [
+        [
+            2.76e-07,
+            2.76e-07,
+            0.0
+        ],
+        [
+            -2.76e-07,
+            2.76e-07,
+            0.0
+        ]
+    ]
+}

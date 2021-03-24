@@ -6,6 +6,7 @@ from scipy.special import jv
 import matplotlib.pyplot as plt
 from numba import jit
 import sys
+from PIL import Image
 
 def loadbar(counter,len):
     counter +=1
@@ -133,72 +134,7 @@ class Microscope:
 
         return f
 
-    # def integrand(self,theta_obj):
-    #
-    #     x_cam,y_cam,z_cam = self.cam_pos
-    #     x_dip,y_dip,z_dip = self.dipole
-    #
-    #     kz_obj = self.k_obj*np.cos(theta_obj)
-    #
-    #     kz_sub = np.sqrt(self.k_sub**2-(self.k_obj*np.sin(theta_obj))**2)
-    #
-    #     RTE = (kz_obj/self.mur_obj-kz_sub/self.mur_sub) \
-    #           /(kz_obj/self.mur_obj+kz_sub/self.mur_sub) \
-    #           *np.exp(-2j*kz_obj*self.z_sub)
-    #
-    #     Q = (kz_obj*self.k_sub**2*self.mur_obj) \
-    #         /(kz_sub*self.k_obj**2*self.mur_sub)
-    #
-    #     RTM = (Q-1)*np.exp(-2j*kz_obj*self.z_sub)/(Q+1)
-    #
-    #     cosTheta_cam = np.sqrt(1-((self.f_obj/self.f_cam)**2)*(np.sin(theta_obj)**2))
-    #
-    #     sinTheta_cam = self.f_obj*np.sin(theta_obj)/self.f_cam
-    #
-    #     rho_x = self.k_cam*sinTheta_cam*x_cam \
-    #             - self.k_obj*np.sin(theta_obj)*x_dip
-    #
-    #     rho_y = self.k_cam*sinTheta_cam*y_cam \
-    #             - self.k_obj*np.sin(theta_obj)*y_dip
-    #
-    #     rho = np.sqrt(rho_y**2+rho_x**2)
-    #
-    #     psi = np.arctan2(rho_y,rho_x)
-    #
-    #     Zz = self.k_cam*cosTheta_cam*z_cam-self.k_obj*np.cos(theta_obj)*z_dip
-    #
-    #     Z = self.k_cam*cosTheta_cam*z_cam+self.k_obj*np.cos(theta_obj)*z_dip
-    #
-    #     fxx1 = (np.exp(1j*Zz)+RTE*np.exp(1j*Z)+cosTheta_cam*np.cos(theta_obj)*(np.exp(1j*Zz)-RTM*np.exp(1j*Z))) \
-    #            *jv(0,rho)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fxx2 = (np.exp(1j*Zz)+RTE*np.exp(1j*Z)-cosTheta_cam*np.cos(theta_obj)*(np.exp(1j*Zz)-RTM*np.exp(1j*Z))) \
-    #            *jv(2,rho)*np.cos(2*psi)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fxy = (np.exp(1j*Zz)+RTE*np.exp(1j*Z)-cosTheta_cam*np.cos(theta_obj)*(np.exp(1j*Zz)-RTM*np.exp(1j*Z))) \
-    #           *jv(2,rho)*np.sin(2*psi)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fxz = -2j*cosTheta_cam*np.sin(theta_obj)*(np.exp(1j*Zz)+RTM*np.exp(1j*Z)) \
-    #           *jv(1,rho)*np.cos(psi)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fyz = -2j*cosTheta_cam*np.sin(theta_obj)*(np.exp(1j*Zz)+RTM*np.exp(1j*Z)) \
-    #           *jv(1,rho)*np.sin(psi)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fzx = 2j*sinTheta_cam*np.cos(theta_obj)*(np.exp(1j*Zz)-RTM*np.exp(1j*Z)) \
-    #           *jv(1,rho)*np.cos(psi)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fzy = 2j*sinTheta_cam*np.cos(theta_obj)*(np.exp(1j*Zz)-RTM)*np.exp(1j*Z) \
-    #           *jv(1,rho)*np.sin(psi)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #     fzz = -2*sinTheta_cam*np.sin(theta_obj)*(np.exp(1j*Zz)+RTM)*np.exp(1j*Z) \
-    #           *jv(0,rho)*np.sqrt(np.cos(theta_obj)/cosTheta_cam)*np.sin(theta_obj)
-    #
-    #
-    #     f = np.array((fxx1,fxx2,fxy,fxz,fyz,fzx,fzy,fzz))
-    #
-    #     return f
-
-    def funGreenIntegrand1D(self,cam_pos,dipole):
+    def dyadic_green_microscope(self,cam_pos,dipole):
         def static(theta_obj):
             tmp = self.static_integrand(theta_obj,k,mur,f,cam_pos,dipole,self.z_sub)
             tmp,rho = tmp[:-1],tmp[-1]
@@ -226,10 +162,11 @@ class Microscope:
         G = self.alpha*np.array(((Ixx,Ixy,Ixz),(Iyx,Iyy,Iyz),(Izx,Izy,Izz)))
         return G
 
-    def microscope_greens(self,FoV,points):
+    def microscope_greens(self,camera_size,points):
         grid_size = int(np.sqrt(self.N_sensors))
-        x_cam = y_cam = np.linspace(-FoV/2,FoV/2,grid_size)*self.wl*self.Mag
+        x_cam = y_cam = np.linspace(-camera_size/2,camera_size/2,grid_size)*self.wl*self.Mag
         z_cam = 0
+
 
         G = np.zeros((len(points),len(x_cam),len(y_cam),3,3),dtype=np.complex128)
         tot_calc = len(y_cam)*len(x_cam)*len(points)
@@ -242,12 +179,13 @@ class Microscope:
                         loadbar(counter,tot_calc)
                     x_pos = x_cam[ix]
                     pos_cam = np.array((x_pos,y_pos,z_cam))
-                    G[id,ix,iy] = self.funGreenIntegrand1D(pos_cam,points[id])
+                    G[id,ix,iy] = self.dyadic_green_microscope(pos_cam,points[id])
+        print('\n')
 
         return G
 
-    def create_image_stack(self,FoV,stack_size):
-        G = self.microscope_greens(FoV,self.dipoles)
+    def create_image_stack(self,camera_size,stack_size):
+        G = self.microscope_greens(camera_size,self.dipoles)
 
         phi = np.random.uniform(0,2*np.pi,(len(self.dipoles),stack_size))
         theta = np.random.uniform(-np.pi/2,np.pi/2,(len(self.dipoles),stack_size))
@@ -256,54 +194,70 @@ class Microscope:
                                   np.sin(phi)*np.sin(theta),
                                   np.cos(theta)]).swapaxes(0,1)
 
-        self.E_stack = np.zeros((3*self.N_sensors,stack_size),dtype=G.dtype)
+        self.E_stack = np.zeros((3,self.N_sensors,stack_size),dtype=G.dtype)
+        # self.E_stack = np.zeros((self.N_sensors,stack_size),dtype=G.dtype)
         for i in range(len(self.dipoles)):
-            self.E_stack += G[i].reshape(-1,G[i].shape[-1])@polarizations[i,:]
+            G_t = G[i].transpose(2,0,1,3).reshape(3,-1,G[i].shape[-1])
+            # G_t = G[i,:,:,0].reshape(-1,G[i].shape[-1])
+            self.E_stack += G_t@polarizations[i]
+
+        # self.E_stack = self.E_stack.reshape(3,-1,self.E_stack.shape[-1])
 
     def find_noise_space(self):
-        S = self.E_stack@np.conjugate(self.E_stack).T
+        self.E_N = []
+        for i in range(3):
+            E_tmp = self.E_stack[i]
+            S = E_tmp@np.conjugate(E_tmp).T
 
-        eigvals,eigvecs = np.linalg.eig(S)
+            eigvals,eigvecs = np.linalg.eig(S)
 
-        dist = np.sqrt(eigvals.real**2 + eigvals.imag**2)
+            dist = np.sqrt(eigvals.real**2 + eigvals.imag**2)
 
-        noice_idx = np.where(dist<1)[0]
-        N = len(noice_idx)
-        D = len(self.E_stack)-N
+            noice_idx = np.where(dist<1)[0]
+            N = len(noice_idx)
+            D = len(E_tmp)-N
 
-        self.E_N = eigvecs[:,noice_idx]
+            self.E_N.append(eigvecs[:,noice_idx])
 
-    def reconstruct_image(self,FoV,N_reconstruction):
+
+    def reconstruct_image(self,FoV,camera_size,N_reconstruction,z_dipoles):
         self.find_noise_space()
 
         x_pos = y_pos = np.linspace(-FoV/2,FoV/2,N_reconstruction)*self.wl
-        z_pos = 0
+        z_pos = z_dipoles
 
         xx,yy,zz = np.meshgrid(x_pos,y_pos,z_pos)
         grid = np.array((xx.flatten(),yy.flatten(),zz.flatten())).T
-        A = self.microscope_greens(FoV,grid)
-        A = A.reshape(A.shape[0],-1,A.shape[-1])
+        A = self.microscope_greens(camera_size,grid)
+        A = A.reshape(A.shape[0],-1,3,3)
 
-        try:
-            P = np.zeros((3,len(x_pos),len(y_pos),len(z_pos)),dtype=np.complex128)
-        except:
-            P = np.zeros((3,len(x_pos),len(y_pos)),dtype=np.complex128)
+        P = np.zeros((xx.shape[0],xx.shape[1],xx.shape[2]),dtype=np.complex128)
+
         for i in range(3):
-            A_t = A[:,:,i]
+            for j in range(3):
+                for k in range(3):
+                    P_1 = A[:,:,i,j].conj()@self.E_N[k]
+                    P_2 = A[:,:,i,j]@self.E_N[k].conj()
+                    P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
+                    P+= P_t.reshape(xx.shape[0],xx.shape[1],xx.shape[2])
 
-            P_1 = np.matmul(np.conjugate(A_t),self.E_N)
-            P_2 = np.matmul(A_t,np.conjugate(self.E_N))
+        self.P = P
 
-            P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
-            try:
-                P[i] = P_t.reshape((len(x_pos),len((y_pos),len(z_pos))))
-            except:
-                P[i] = P_t.reshape((len(x_pos),len((y_pos))))
+    def test_music_on_point(self,camera_size,point):
+        self.find_noise_space()
 
-        P = np.sum(P,axis=0)
+        G = self.microscope_greens(camera_size,point.reshape(1,-1)).reshape(-1,3,3)
 
-        plt.imshow(np.abs(P))
-        plt.show()
+        P = np.zeros((3,3),dtype=np.complex128)
+
+        for i in range(3):
+            for j in range(3):
+                P_1 = G[:,i,j].conj()@self.E_N
+                P_2 = G[:,i,j]@self.E_N.conj()
+                P_t = P_1.reshape(1,-1)@P_2.reshape(-1,1)
+                P[i,j] = P_t
+
+        print(1/np.sum(np.abs(P)))
 
     def plot_fields(self):
         intensity_xpol = (np.abs(self.G[0,:,:,0,0]+self.G[1,:,:,0,0])**2)+(np.abs(self.G[0,:,:,1,0]+self.G[1,:,:,1,0])**2)+(np.abs(self.G[0,:,:,2,0]+self.G[1,:,:,2,0])**2)
@@ -366,3 +320,20 @@ class Microscope:
         plt.imshow(intensity_zpol.T)
         plt.colorbar()
         plt.show()
+
+    def save_image_stack(self,dir):
+        t0 = round(time())
+
+        data = {'Num_dipoles' : len(self.dipoles),
+                'N_sensors' : mic.E_stack.shape[0],
+                'M_orientations' : mic.E_stack.shape[1],
+                'Dipole_positions' : self.dipoles.tolist()}
+
+        with open(dir+"/{}.json".format(t0), 'w') as output:
+            json.dump(data, output, indent=4)
+
+        os.mkdir(dir+'/{}'.format(t0))
+
+        for i in range(self.P.shape[2]):
+            im = Image.fromarray(np.abs(self.P[:,:,i]).astype(np.float64))
+            im.save(dir+'/{}'.format(t0)+'/{}.tiff'.format(i))

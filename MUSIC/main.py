@@ -50,14 +50,14 @@ if __name__ == '__main__':
 
     # dipoles = np.random.uniform(-1.5*wl,1.5*wl,(5,3))
 
-    # E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
-    # P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cpu')
+    E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
+    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cpu')
     # plot_sensor_field(sensors,E_sensors)
 
 
-    Mag = 60
-    N_sensors = 61**2
-    microscope_greens(dipoles,wl,M_inputs,N_sensors,k_0,Mag)
+    # Mag = 60
+    # N_sensors = 61**2
+    # microscope_greens(dipoles,wl,M_inputs,N_sensors,k_0,Mag)
 
     exit()
 
