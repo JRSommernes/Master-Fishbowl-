@@ -5,7 +5,7 @@ from scipy.integrate import quad_vec
 from scipy.special import jv
 import matplotlib.pyplot as plt
 from numba import jit
-import sys
+import sys, os, json
 from PIL import Image
 
 def loadbar(counter,len):
@@ -17,34 +17,11 @@ def loadbar(counter,len):
     if counter == len:
         print('\n')
 
-class Fishbowl:
-    def __init__(self,N_sensors,microscope_radius,n_0):
-        self.N_sensors = N_sensors
-        self.n_0 = n_0
-        self.radius = microscope_radius
-
-    def make_sensors(self):
-        sensors = np.zeros((self.N_sensors,3))
-        phi = np.pi * (3. - np.sqrt(5.))  # golden angle in radians
-
-        for i in range(self.N_sensors):
-            y = (1 - (i / float(self.N_sensors - 1)) * 2)  # y goes from 1 to -1
-            radius = np.sqrt(1 - y * y)  # radius at y
-
-            theta = phi * i  # golden angle increment
-
-            x = np.cos(theta) * radius
-            z = np.sin(theta) * radius
-
-            x,y,z = x*self.radius, y*self.radius, z*self.radius
-
-            sensors[i] = [x,y,z]
-        self.sensors = np.ascontiguousarray(sensors.T)
-
 class Microscope:
-    def __init__(self,Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_sub,dipoles):
+    def __init__(self,Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_sub,dipoles,cam_size,M_timepoints):
         self.Mag = Mag
         self.N_sensors = N_sensors
+        self.cam_size = cam_size
         self.wl = wl
         self.n_obj, self.n_sub, self.n_cam = n
         self.mur_obj, self.mur_sub, self.mur_cam = mur
@@ -54,6 +31,7 @@ class Microscope:
         self.NA = NA
         self.z_sub = z_sub
         self.dipoles = dipoles
+        self.M_timepoints = M_timepoints
 
         self.opt_ax_Mag = (self.n_cam/self.n_obj)*self.Mag**2
         self.theta_max = np.arcsin(self.NA/self.n_obj)
@@ -162,9 +140,9 @@ class Microscope:
         G = self.alpha*np.array(((Ixx,Ixy,Ixz),(Iyx,Iyy,Iyz),(Izx,Izy,Izz)))
         return G
 
-    def microscope_greens(self,camera_size,points):
+    def microscope_greens(self,points):
         grid_size = int(np.sqrt(self.N_sensors))
-        x_cam = y_cam = np.linspace(-camera_size/2,camera_size/2,grid_size)*self.wl*self.Mag
+        x_cam = y_cam = np.linspace(-self.cam_size/2,self.cam_size/2,grid_size)*self.wl*self.Mag
         z_cam = 0
 
 
@@ -184,24 +162,20 @@ class Microscope:
 
         return G
 
-    def create_image_stack(self,camera_size,stack_size):
-        G = self.microscope_greens(camera_size,self.dipoles)
+    def create_image_stack(self):
+        G = self.microscope_greens(self.dipoles)
 
-        phi = np.random.uniform(0,2*np.pi,(len(self.dipoles),stack_size))
-        theta = np.random.uniform(-np.pi/2,np.pi/2,(len(self.dipoles),stack_size))
+        phi = np.random.uniform(0,2*np.pi,(len(self.dipoles),self.M_timepoints))
+        theta = np.random.uniform(-np.pi/2,np.pi/2,(len(self.dipoles),self.M_timepoints))
 
         polarizations = np.array([np.cos(phi)*np.sin(theta),
                                   np.sin(phi)*np.sin(theta),
                                   np.cos(theta)]).swapaxes(0,1)
 
-        self.E_stack = np.zeros((3,self.N_sensors,stack_size),dtype=G.dtype)
-        # self.E_stack = np.zeros((self.N_sensors,stack_size),dtype=G.dtype)
+        self.E_stack = np.zeros((3,self.N_sensors,self.M_timepoints),dtype=G.dtype)
         for i in range(len(self.dipoles)):
             G_t = G[i].transpose(2,0,1,3).reshape(3,-1,G[i].shape[-1])
-            # G_t = G[i,:,:,0].reshape(-1,G[i].shape[-1])
             self.E_stack += G_t@polarizations[i]
-
-        # self.E_stack = self.E_stack.reshape(3,-1,self.E_stack.shape[-1])
 
     def find_noise_space(self):
         self.E_N = []
@@ -219,16 +193,80 @@ class Microscope:
 
             self.E_N.append(eigvecs[:,noice_idx])
 
+    def check_if_resolvable(self):
+        x1 = self.dipoles[0,0]
+        x2 = self.dipoles[1,0]
 
-    def reconstruct_image(self,FoV,camera_size,N_reconstruction,z_dipoles):
+        x = np.linspace(x1,x2,20).reshape(-1,1)
+        y = self.dipoles[0,1]*np.ones_like(x)
+        z = self.dipoles[0,2]*np.ones_like(x)
+        pos = np.append(x,np.append(y,z,axis=1),axis=1)
+
+        A = self.microscope_greens(pos)
+        A = A.reshape(A.shape[0],-1,3,3)
+
+        P = np.zeros(len(x),dtype=np.complex128)
+
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    P_1 = A[:,:,i,j].conj()@self.E_N[k]
+                    P_2 = A[:,:,i,j]@self.E_N[k].conj()
+                    P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
+                    P+= P_t.reshape(len(x))
+
+        for el in P[P.argsort()[-2:]]:
+            if el not in (P[0],P[-1]):
+                return False
+        peak = np.min((P[0],P[-1]))
+        min = np.min(P)
+        if min/peak <= 0.735:
+            return True
+        else:
+            return False
+
+    def find_resolution_limit(self):
+        self.find_noise_space()
+        self.old_dipoles = np.copy(self.dipoles)*2
+
+        while 1:
+            if self.check_if_resolvable():
+                self.old_dipoles = np.copy(self.dipoles)
+                self.E_stack_old = np.copy(self.E_stack)
+                x1 = self.dipoles[0,0]
+                x2 = self.dipoles[1,0]
+                diff = np.abs(x1-x2)
+                self.dipoles[0,0] = -diff/4
+                self.dipoles[1,0] = diff/4
+                self.resolution_limit = diff/self.wl
+            else:
+                if np.abs((self.dipoles[0,0]-self.old_dipoles[0,0])/self.old_dipoles[0,0]) < 0.01:
+                    break
+                x1 = self.dipoles[0,0]
+                x2 = self.old_dipoles[0,0]
+                x = np.abs(x1+x2)/2
+                self.dipoles[0,0] = -x
+                self.dipoles[1,0] = x
+
+            self.create_image_stack()
+            self.find_noise_space()
+
+        self.dipoles = np.copy(self.old_dipoles)
+        self.E_stack = np.copy(self.E_stack_old)
+
+    def reconstruct_image(self,N_reconstruction):
         self.find_noise_space()
 
+        x1 = self.dipoles[0,0]
+        x2 = self.dipoles[1,0]
+        FoV = np.abs(x1-x2)*1.5
+
         x_pos = y_pos = np.linspace(-FoV/2,FoV/2,N_reconstruction)*self.wl
-        z_pos = z_dipoles
+        z_pos = self.dipoles[0,2]
 
         xx,yy,zz = np.meshgrid(x_pos,y_pos,z_pos)
         grid = np.array((xx.flatten(),yy.flatten(),zz.flatten())).T
-        A = self.microscope_greens(camera_size,grid)
+        A = self.microscope_greens(grid)
         A = A.reshape(A.shape[0],-1,3,3)
 
         P = np.zeros((xx.shape[0],xx.shape[1],xx.shape[2]),dtype=np.complex128)
@@ -239,25 +277,9 @@ class Microscope:
                     P_1 = A[:,:,i,j].conj()@self.E_N[k]
                     P_2 = A[:,:,i,j]@self.E_N[k].conj()
                     P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
-                    P+= P_t.reshape(xx.shape[0],xx.shape[1],xx.shape[2])
+                    P += P_t.reshape(xx.shape[0],xx.shape[1],xx.shape[2])
 
         self.P = P
-
-    def test_music_on_point(self,camera_size,point):
-        self.find_noise_space()
-
-        G = self.microscope_greens(camera_size,point.reshape(1,-1)).reshape(-1,3,3)
-
-        P = np.zeros((3,3),dtype=np.complex128)
-
-        for i in range(3):
-            for j in range(3):
-                P_1 = G[:,i,j].conj()@self.E_N
-                P_2 = G[:,i,j]@self.E_N.conj()
-                P_t = P_1.reshape(1,-1)@P_2.reshape(-1,1)
-                P[i,j] = P_t
-
-        print(1/np.sum(np.abs(P)))
 
     def plot_fields(self):
         intensity_xpol = (np.abs(self.G[0,:,:,0,0]+self.G[1,:,:,0,0])**2)+(np.abs(self.G[0,:,:,1,0]+self.G[1,:,:,1,0])**2)+(np.abs(self.G[0,:,:,2,0]+self.G[1,:,:,2,0])**2)
@@ -325,8 +347,8 @@ class Microscope:
         t0 = round(time())
 
         data = {'Num_dipoles' : len(self.dipoles),
-                'N_sensors' : mic.E_stack.shape[0],
-                'M_orientations' : mic.E_stack.shape[1],
+                'N_sensors' : self.E_stack.shape[0],
+                'M_orientations' : self.E_stack.shape[1],
                 'Dipole_positions' : self.dipoles.tolist()}
 
         with open(dir+"/{}.json".format(t0), 'w') as output:
@@ -337,3 +359,37 @@ class Microscope:
         for i in range(self.P.shape[2]):
             im = Image.fromarray(np.abs(self.P[:,:,i]).astype(np.float64))
             im.save(dir+'/{}'.format(t0)+'/{}.tiff'.format(i))
+
+    def save_info(self,dir):
+        t0 = round(time())
+
+        data = {'Resolution limit [wl]' : self.resolution_limit,
+                'N_sensors' : self.N_sensors,
+                'N_timepoints' : self.M_timepoints,
+                'Magnification' : self.Mag,
+                'Optical axis magnification' : self.opt_ax_Mag,
+                'Camera FoV [wl]' : self.cam_size,
+                'Wavelength' : self.wl,
+                'n_objective' : self.n_obj,
+                'n_substrate' : self.n_sub,
+                'n_camera' : self.n_cam,
+                'Relative permeability' : self.mur_obj,
+                'epsr_objective' : self.epsr_obj,
+                'epsr_substrate' : self.epsr_sub,
+                'epsr_camera' : self.epsr_cam,
+                'f_obj' : self.f_obj,
+                'f_cam' : self.f_cam,
+                'NA' : self.NA,
+                'Theta max' : self.theta_max,
+                'Substrate interface [m]' : self.z_sub,
+                'Dipole_positions [wl]' : (self.dipoles/self.wl).tolist()}
+
+        os.mkdir(dir+'/{}'.format(t0))
+
+        with open(dir+"/{}/data.json".format(t0), 'w') as output:
+            json.dump(data, output, indent=4)
+
+        P = self.P.reshape(self.P.shape[0],self.P.shape[1])
+
+        im = Image.fromarray(np.abs(P).astype(np.float64))
+        im.save(dir+'/{}'.format(t0)+'/reconstruction.tiff')
