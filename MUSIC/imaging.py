@@ -25,6 +25,7 @@ def sensor_field(sensors,dipoles,polarizations,N_sensors,k_0):
     E_tot = np.zeros((3*N_sensors,polarizations.shape[2]),dtype=np.complex128)
 
     for i in range(len(dipoles)):
+        G = dyadic_green(sensors,dipoles[i],k_0).transpose(1,0,2)
         G = dyadic_green(sensors,dipoles[i],k_0).reshape(3*N_sensors,3)
         E_tot += G@polarizations[i]
 

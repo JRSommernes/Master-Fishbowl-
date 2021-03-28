@@ -254,12 +254,8 @@ class Microscope:
         self.dipoles = np.copy(self.old_dipoles)
         self.E_stack = np.copy(self.E_stack_old)
 
-    def reconstruct_image(self,N_reconstruction):
+    def reconstruct_image(self,FoV,N_reconstruction):
         self.find_noise_space()
-
-        x1 = self.dipoles[0,0]
-        x2 = self.dipoles[1,0]
-        FoV = np.abs(x1-x2)*1.5
 
         x_pos = y_pos = np.linspace(-FoV/2,FoV/2,N_reconstruction)*self.wl
         z_pos = self.dipoles[0,2]

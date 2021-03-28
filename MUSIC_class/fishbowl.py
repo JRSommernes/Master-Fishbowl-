@@ -106,27 +106,31 @@ class Fishbowl:
                                   np.sin(phi)*np.sin(theta),
                                   np.cos(theta)]).swapaxes(0,1)
 
-        self.E_stack = np.zeros((3,self.N_sensors,self.M_timepoints),dtype=np.complex128)
+        self.E_stack = np.zeros((3*self.N_sensors,self.M_timepoints),dtype=np.complex128)
 
         for i in range(len(self.dipoles)):
-            G = self.dyadic_green(self.dipoles[i]).transpose(1,0,2)
-            self.E_stack += G@polarizations[i]
+            # G = self.dyadic_green(self.dipoles[i]).transpose(1,0,2)
+            G = self.dyadic_green(self.dipoles[i]).reshape(3*self.N_sensors,3)
+
+            for j in range(3):
+                self.E_stack[j] += G[j]@polarizations[i]
 
     def noise_space(self):
-        self.E_N = []
-        for i in range(3):
-            E_t = self.E_stack[i]
-            S = E_t@np.conjugate(E_t).T
+        # self.E_N = []
+        # for i in range(3):
+        E_t = self.E_stack
+        S = E_t@np.conjugate(E_t).T
 
-            eigvals,eigvecs = np.linalg.eig(S)
+        eigvals,eigvecs = np.linalg.eig(S)
 
-            dist = np.sqrt(eigvals.real**2 + eigvals.imag**2)
+        dist = np.sqrt(eigvals.real**2 + eigvals.imag**2)
 
-            noice_idx = np.where(dist<1)[0]
-            N = len(noice_idx)
-            D = len(E_t)-N
+        noice_idx = np.where(dist<1)[0]
+        N = len(noice_idx)
+        D = len(E_t)-N
 
-            self.E_N.append(eigvecs[:,noice_idx])
+        self.E_N= eigvecs[:,noice_idx]
+
 
     def check_if_resolvable(self):
         x1 = self.dipoles[0,0]
@@ -208,21 +212,33 @@ class Fishbowl:
         xx,yy,zz = np.meshgrid(x_pos,y_pos,z_pos)
         grid = np.array((xx.flatten(),yy.flatten(),zz.flatten())).T
 
-        A = np.zeros((len(grid),self.N_sensors,3,3),dtype=np.complex128)
+        A = np.zeros((len(grid),3*self.N_sensors,3),dtype=np.complex128)
         for i,el in enumerate(grid):
-            A[i] = self.dyadic_green(el)
+            A[i] = self.dyadic_green(el).reshape(3*self.N_sensors,3)
 
         P = np.zeros((xx.shape[0],xx.shape[1],xx.shape[2]),dtype=np.complex128)
 
         for i in range(3):
-            for j in range(3):
-                for k in range(3):
-                    P_1 = A[:,:,i,j].conj()@self.E_N[k]
-                    P_2 = A[:,:,i,j]@self.E_N[k].conj()
-                    P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
-                    P += P_t.reshape(xx.shape[0],xx.shape[1],xx.shape[2])
+            # for j in range(3):
+                # for k in range(3):
+
+            P_1 = A[:,:,i].conj()@self.E_N
+            P_2 = A[:,:,i]@self.E_N.conj()
+            P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
+            P += P_t.reshape(xx.shape[0],xx.shape[1],xx.shape[2])
 
         self.P = P
+
+    def test_point(self,point):
+        self.noise_space()
+        A = self.dyadic_green(point).reshape(3*self.N_sensors,3)
+
+        P = 0
+        for i in range(3):
+            P_1 = A[:,i].conj()@self.E_N
+            P_2 = A[:,i]@self.E_N.conj()
+            P += (1/(P_1@P_2))
+        print(P)
 
     def save_image_stack(self,dir):
         t0 = round(time())

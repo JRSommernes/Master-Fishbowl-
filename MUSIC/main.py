@@ -15,7 +15,7 @@ if __name__ == '__main__':
     mu_0 = 4*np.pi*10**-7
     c_0 = 1/np.sqrt(eps_0*mu_0)
 
-    wl = 561e-9
+    wl = 690e-9
     freq = c_0/wl
     k_0 = 2*np.pi*freq*np.sqrt(eps_0*mu_0)
     omega = 2*np.pi*freq
@@ -24,14 +24,20 @@ if __name__ == '__main__':
     n1 = 1.33
 
     sensor_radius = 100*wl
+    # sensor_radius = 16e-2
+
     # dipoles = np.array([[1*wl, 0*wl, 0*wl]])
-    dipoles = np.array([[0.4*wl,0.4*wl,0.4*wl],[-0.4*wl,0.4*wl,0.4*wl]])
-    # dipoles = np.array([[0*wl,0.02*wl,0*wl],[0*wl,0.18*wl,0*wl]])
+    # dipoles = np.array([[0.4*wl,0.4*wl,0.4*wl],[-0.4*wl,0.4*wl,0.4*wl]])
+    dipoles = np.array([[-0.8*wl,0*wl,0*wl],[0.8*wl,0*wl,0*wl]])
+    # dipoles = np.array([[0*wl,0.05*wl,0*wl],[0*wl,-0.05*wl,0*wl]])
 
 
-    FoV = np.array([[-0.2*wl,0.2*wl],
-                    [-0.2*wl,0.2*wl],
-                    [-0.2*wl,0.2*wl]])
+    # FoV = np.array([[-0.2*wl,0.2*wl],
+    #                 [-0.2*wl,0.2*wl],
+    #                 [-0.2*wl,0.2*wl]])
+    FoV = np.array([[-1.5*wl,1.5*wl],
+                    [-1.5*wl,1.5*wl],
+                    [-1.5*wl,1.5*wl]])
 
     N_sensors = 50
     N_emitters = 100
@@ -58,6 +64,9 @@ if __name__ == '__main__':
     # Mag = 60
     # N_sensors = 61**2
     # microscope_greens(dipoles,wl,M_inputs,N_sensors,k_0,Mag)
+
+    plt.imshow(np.abs(P[:,:,0]))
+    plt.show()
 
     exit()
 

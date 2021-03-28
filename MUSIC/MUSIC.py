@@ -148,7 +148,8 @@ def P_estimation(E_field,sensors,N_recon,FoV,k_0,target='cuda'):
 
     x = np.linspace(FoV[0,0],FoV[0,1],N_recon)
     y = np.linspace(FoV[1,0],FoV[1,1],N_recon)
-    z = np.linspace(FoV[2,0],FoV[2,1],N_recon)
+    # z = np.linspace(FoV[2,0],FoV[2,1],N_recon)
+    z = [0]
 
     xx,yy = np.meshgrid(x,y)
     if target == 'cuda':
