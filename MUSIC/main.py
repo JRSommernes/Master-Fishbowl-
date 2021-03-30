@@ -23,23 +23,23 @@ if __name__ == '__main__':
     n0 = 1
     n1 = 1.33
 
-    sensor_radius = 100*wl
-    # sensor_radius = 16e-2
+    # sensor_radius = 100*wl
+    sensor_radius = 16e-2
 
     # dipoles = np.array([[1*wl, 0*wl, 0*wl]])
     # dipoles = np.array([[0.4*wl,0.4*wl,0.4*wl],[-0.4*wl,0.4*wl,0.4*wl]])
-    dipoles = np.array([[-0.8*wl,0*wl,0*wl],[0.8*wl,0*wl,0*wl]])
+    dipoles = np.array([[-0.03*wl,0*wl,0*wl],[0.03*wl,0*wl,0*wl]])
     # dipoles = np.array([[0*wl,0.05*wl,0*wl],[0*wl,-0.05*wl,0*wl]])
 
 
-    # FoV = np.array([[-0.2*wl,0.2*wl],
-    #                 [-0.2*wl,0.2*wl],
-    #                 [-0.2*wl,0.2*wl]])
-    FoV = np.array([[-1.5*wl,1.5*wl],
-                    [-1.5*wl,1.5*wl],
-                    [-1.5*wl,1.5*wl]])
+    FoV = np.array([[-0.2*wl,0.2*wl],
+                    [-0.2*wl,0.2*wl],
+                    [-0.2*wl,0.2*wl]])
+    # FoV = np.array([[-1.5*wl,1.5*wl],
+    #                 [-1.5*wl,1.5*wl],
+    #                 [-1.5*wl,1.5*wl]])
 
-    N_sensors = 50
+    N_sensors = 25
     N_emitters = 100
     M_inputs = 100
     N_recon = 101

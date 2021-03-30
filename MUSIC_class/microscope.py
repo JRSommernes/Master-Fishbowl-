@@ -18,10 +18,11 @@ def loadbar(counter,len):
         print('\n')
 
 class Microscope:
-    def __init__(self,Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_sub,dipoles,cam_size,M_timepoints):
+    def __init__(self,Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_sub,dipoles,voxel_size,M_timepoints):
         self.Mag = Mag
         self.N_sensors = N_sensors
-        self.cam_size = cam_size
+        self.voxel_size = voxel_size
+        # self.cam_size = cam_size
         self.wl = wl
         self.n_obj, self.n_sub, self.n_cam = n
         self.mur_obj, self.mur_sub, self.mur_cam = mur
@@ -38,6 +39,7 @@ class Microscope:
         self.k_obj = self.k_0*self.n_obj
         self.k_sub = self.k_0*self.n_sub
         self.k_cam = self.k_0*self.n_cam
+        self.cam_size = np.sqrt(N_sensors)*voxel_size
 
         self.alpha = self.k_cam*np.exp(1j*(self.k_obj*self.f_obj+self.k_cam*self.f_cam))/(8j*np.pi)
         self.alpha *= self.f_obj/self.f_cam
@@ -152,13 +154,9 @@ class Microscope:
             y_pos = y_cam[iy]
             for ix in range(len(x_cam)):
                 for id in range(len(points)):
-                    if id%100 == 0:
-                        counter = id+ix*len(points)+iy*len(x_cam)*len(points)
-                        loadbar(counter,tot_calc)
                     x_pos = x_cam[ix]
                     pos_cam = np.array((x_pos,y_pos,z_cam))
                     G[id,ix,iy] = self.dyadic_green_microscope(pos_cam,points[id])
-        print('\n')
 
         return G
 
@@ -229,6 +227,7 @@ class Microscope:
         self.find_noise_space()
         self.old_dipoles = np.copy(self.dipoles)*2
 
+        counter = 0
         while 1:
             if self.check_if_resolvable():
                 self.old_dipoles = np.copy(self.dipoles)
@@ -250,6 +249,8 @@ class Microscope:
 
             self.create_image_stack()
             self.find_noise_space()
+            counter+=1
+            print(counter)
 
         self.dipoles = np.copy(self.old_dipoles)
         self.E_stack = np.copy(self.E_stack_old)
@@ -356,13 +357,11 @@ class Microscope:
             im = Image.fromarray(np.abs(self.P[:,:,i]).astype(np.float64))
             im.save(dir+'/{}'.format(t0)+'/{}.tiff'.format(i))
 
-    def save_info(self,dir):
-        t0 = round(time())
-
+    def save_info(self,dir,counter):
         data = {'Resolution limit [wl]' : self.resolution_limit,
-                'N_sensors' : self.N_sensors,
-                'N_timepoints' : self.M_timepoints,
-                'Magnification' : self.Mag,
+                'N_sensors' : str(self.N_sensors),
+                'N_timepoints' : str(self.M_timepoints),
+                'Magnification' : str(self.Mag),
                 'Optical axis magnification' : self.opt_ax_Mag,
                 'Camera FoV [wl]' : self.cam_size,
                 'Wavelength' : self.wl,
@@ -380,12 +379,12 @@ class Microscope:
                 'Substrate interface [m]' : self.z_sub,
                 'Dipole_positions [wl]' : (self.dipoles/self.wl).tolist()}
 
-        os.mkdir(dir+'/{}'.format(t0))
+        # os.mkdir(dir+'/{}_microscope'.format(counter))
 
-        with open(dir+"/{}/data.json".format(t0), 'w') as output:
+        with open(dir+"/{}_data_microscope.json".format(counter), 'w') as output:
             json.dump(data, output, indent=4)
 
-        P = self.P.reshape(self.P.shape[0],self.P.shape[1])
-
-        im = Image.fromarray(np.abs(P).astype(np.float64))
-        im.save(dir+'/{}'.format(t0)+'/reconstruction.tiff')
+        # P = self.P.reshape(self.P.shape[0],self.P.shape[1])
+        #
+        # im = Image.fromarray(np.abs(P).astype(np.float64))
+        # im.save(dir+'/{}'.format(t0)+'/reconstruction.tiff')
