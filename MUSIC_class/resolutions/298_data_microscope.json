@@ -1,5 +1,5 @@
 {
-    "Resolution limit [wl]": 0.00010220411566323256,
+    "Resolution limit [wl]": 0.00010643579694499743,
     "N_sensors": "225",
     "N_timepoints": "10",
     "Magnification": "60",
@@ -20,12 +20,12 @@
     "Substrate interface [m]": -3e-08,
     "Dipole_positions [wl]": [
         [
-            -5.110205783161628e-05,
+            -5.3217898472498714e-05,
             0.0,
             0.0
         ],
         [
-            5.110205783161628e-05,
+            5.3217898472498714e-05,
             0.0,
             0.0
         ]

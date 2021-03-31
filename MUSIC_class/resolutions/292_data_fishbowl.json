@@ -1,5 +1,5 @@
 {
-    "Resolution limit [wl]": 0.0591537691580015,
+    "Resolution limit [wl]": 0.0625,
     "N_sensors": "225",
     "Sensor radius": 0.05,
     "N_timepoints": "10",
@@ -11,12 +11,12 @@
     "Theta max": 0.8509085144778487,
     "Dipole_positions [wl]": [
         [
-            -0.02957688457900075,
+            -0.03125,
             0.0,
             0.0
         ],
         [
-            0.02957688457900075,
+            0.03125,
             0.0,
             0.0
         ]
