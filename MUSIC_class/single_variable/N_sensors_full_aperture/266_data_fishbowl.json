@@ -1,0 +1,23 @@
+{
+    "Resolution limit [wl]": 0.005729449912905694,
+    "N_sensors": "266",
+    "Sensor radius": 0.05,
+    "N_timepoints": "100",
+    "Wavelength": 6.9e-07,
+    "n_objective": 1.33,
+    "Relative permeability": 1,
+    "epsr_objective": 1.7689000000000001,
+    "Theta max": 0,
+    "Dipole_positions [wl]": [
+        [
+            -0.002864724956452847,
+            0.0,
+            0.0
+        ],
+        [
+            0.002864724956452847,
+            0.0,
+            0.0
+        ]
+    ]
+}

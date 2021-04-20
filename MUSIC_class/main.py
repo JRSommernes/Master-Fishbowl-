@@ -1,6 +1,6 @@
 import numpy as np
 from microscope import Microscope
-from new_fishbowl import Fishbowl
+from fishbowl import Fishbowl
 import matplotlib.pyplot as plt
 from scipy.constants import epsilon_0, mu_0, c
 from time import time
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     z_Interface_sub = -30e-9
 
-    FoV = 1
+    FoV = 10
     NA = 1.2
     camera_size = 6
     voxel_size = 60e-9/wl
@@ -73,33 +73,73 @@ if __name__ == '__main__':
     # mic.find_resolution_limit()
     # print(mic.resolution_limit)
     # exit()
+    sensor_arr = []
+    for el in os.listdir('single_variable/N_sensors'):
+        tmp = el.split('_')[0]
+        sensor_arr.append(int(tmp))
 
-    counter = 288
-    N_sensors = 15**2
-    # for N_sensors in np.array([5,10,15])**2:
-    for M_timepoints in np.array([10,40,70,100]):
-        for f_cam in np.array([5e-2,1e-1,2e-1]):
-            for NA in np.array([0.8,1,1.2]):
-                f_obj = f_cam/(Mag*n_cam/n_obj)
-                f = [f_obj,f_cam]
-                dipoles = np.array([[-1*wl,0*wl,0*wl],[1*wl,0*wl,0*wl]])
+    counter = 0
+    # N_sensors = 15**2
+    M_timepoints = 100
+    f_cam = 5e-2
+    NA = 1.2
+    for N_sensors in sensor_arr:
+        M_timepoints = 100
+        # N_sensors = 100
+        NA = 1.2
+        f_cam = 5e-2
+        # f_cam = round(f_cam,5)
 
-                dir = 'C:/Users/jso085/github/Master-Fishbowl-/MUSIC_class/resolutions_2'
+        dipoles = np.array([[-5*wl,0*wl,0*wl],[5*wl,0*wl,0*wl]])
 
-                fib = Fishbowl(N_sensors,f_cam,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints)
-                # fib.make_sensors()
-                fib.limited_aperture_sensors(NA)
-                fib.data_acquisition()
-                fib.find_resolution_limit()
-                print(fib.resolution_limit)
-                fib.save_info(dir,counter)
+        dir = 'single_variable/N_sensors_full_aperture'
 
-                for voxel_size in np.array([60,80,100,120])*1e-9/wl:
+        if os.path.isfile(dir+'/{}_data_fishbowl.json'.format(N_sensors)):
+            continue
+        print(N_sensors)
 
-                    mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles,voxel_size,M_timepoints)
-                    mic.create_image_stack()
-                    mic.find_resolution_limit()
-                    print(mic.resolution_limit)
-                    mic.save_info(dir,counter)
+        fib = Fishbowl(N_sensors,f_cam,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints)
+        fib.make_sensors()
+        # fib.limited_aperture_sensors(NA)
+        # fib.plot_aperture_field()
+        fib.data_acquisition()
+        fib.find_resolution_limit()
+        print(fib.resolution_limit)
+        fib.save_info(dir,N_sensors)
 
-                    counter+=1
+
+    # for N_sensors in np.array([25,100,225]):
+    #     for M_timepoints in np.array([100]):
+    #         for f_cam in np.array([5e-2]):
+    #             for NA in np.array([1.2]):
+    #                 for voxel_size in np.array([1e-4,1e-2,1])*wl:
+    #                     f_obj = f_cam/(Mag*n_cam/n_obj)
+    #                     f = [f_obj,f_cam]
+    #                     dipoles = np.array([[-5*wl,0*wl,0*wl],[5*wl,0*wl,0*wl]])
+    #
+    #                     dir = 'increasing_voxel_size'
+    #
+    #                     if os.path.isfile(dir+'/{}_data_fishbowl.json'.format(counter)):
+    #                         counter+=1
+    #                         continue
+    #                     print(counter)
+    #
+    #                     fib = Fishbowl(N_sensors,f_cam,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints,voxel_size)
+    #                     # fib.make_sensors()
+    #                     fib.limited_aperture_sensors(NA)
+    #                     # fib.plot_aperture_field()
+    #                     fib.data_acquisition()
+    #                     fib.find_resolution_limit()
+    #                     print(fib.resolution_limit)
+    #                     fib.save_info(dir,counter)
+
+
+
+        #
+        # mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles,voxel_size,M_timepoints)
+        # mic.create_image_stack()
+        # mic.find_resolution_limit()
+        # print(mic.resolution_limit)
+        # mic.save_info(dir,counter)
+
+        counter+=1

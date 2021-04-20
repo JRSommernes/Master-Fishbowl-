@@ -381,7 +381,7 @@ class Microscope:
 
         # os.mkdir(dir+'/{}_microscope'.format(counter))
 
-        with open(dir+"/{}_data_microscope.json".format(counter), 'w') as output:
+        with open(dir+"/{}_data_fishbowl.json".format(counter), 'w') as output:
             json.dump(data, output, indent=4)
 
         # P = self.P.reshape(self.P.shape[0],self.P.shape[1])
