@@ -90,22 +90,22 @@ if __name__ == '__main__':
         f_cam = 5e-2
         # f_cam = round(f_cam,5)
 
-        dipoles = np.array([[-5*wl,0*wl,0*wl],[5*wl,0*wl,0*wl]])
-
-        dir = 'single_variable/N_sensors_full_aperture'
-
-        if os.path.isfile(dir+'/{}_data_fishbowl.json'.format(N_sensors)):
-            continue
-        print(N_sensors)
-
-        fib = Fishbowl(N_sensors,f_cam,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints)
-        fib.make_sensors()
-        # fib.limited_aperture_sensors(NA)
-        # fib.plot_aperture_field()
-        fib.data_acquisition()
-        fib.find_resolution_limit()
-        print(fib.resolution_limit)
-        fib.save_info(dir,N_sensors)
+        # dipoles = np.array([[-5*wl,0*wl,0*wl],[5*wl,0*wl,0*wl]])
+        #
+        # dir = 'single_variable/N_sensors_full_aperture'
+        #
+        # if os.path.isfile(dir+'/{}_data_fishbowl.json'.format(N_sensors)):
+        #     continue
+        # print(N_sensors)
+        #
+        # fib = Fishbowl(N_sensors,f_cam,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints)
+        # fib.make_sensors()
+        # # fib.limited_aperture_sensors(NA)
+        # # fib.plot_aperture_field()
+        # fib.data_acquisition()
+        # fib.find_resolution_limit()
+        # print(fib.resolution_limit)
+        # fib.save_info(dir,N_sensors)
 
 
     # for N_sensors in np.array([25,100,225]):
@@ -134,12 +134,16 @@ if __name__ == '__main__':
     #                     fib.save_info(dir,counter)
 
 
+    N_sensors = 225
+    M_timepoints = 100
+    f_cam = 0.2
+    NA = 1.2
 
-        #
-        # mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles,voxel_size,M_timepoints)
-        # mic.create_image_stack()
-        # mic.find_resolution_limit()
-        # print(mic.resolution_limit)
-        # mic.save_info(dir,counter)
+    dipoles = np.array([[-1.2e-05,0.0,0.0],[1.2e-05,0.0,0.0]])
+    mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles,voxel_size,M_timepoints)
+    mic.create_image_stack()
+    mic.find_resolution_limit()
+    print(mic.resolution_limit)
+    mic.save_info(dir,counter)
 
-        counter+=1
+        # counter+=1

@@ -213,6 +213,10 @@ class Microscope:
                     P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
                     P+= P_t.reshape(len(x))
 
+        plt.plot(P)
+        plt.show()
+        exit()
+
         for el in P[P.argsort()[-2:]]:
             if el not in (P[0],P[-1]):
                 return False
