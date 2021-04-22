@@ -163,8 +163,22 @@ class Microscope:
     def create_image_stack(self):
         G = self.microscope_greens(self.dipoles)
 
-        phi = np.random.uniform(0,2*np.pi,(len(self.dipoles),self.M_timepoints))
-        theta = np.random.uniform(-np.pi/2,np.pi/2,(len(self.dipoles),self.M_timepoints))
+        try:
+            ph = np.load('phi.npy')
+            th = np.load('theta.npy')
+            if ph.shape[1] == th.shape[1] == self.M_timepoints:
+                phi = ph
+                theta = th
+            else:
+                phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+                theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+                np.save('phi',phi)
+                np.save('theta',theta)
+        except:
+            phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+            theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+            np.save('phi',phi)
+            np.save('theta',theta)
 
         polarizations = np.array([np.cos(phi)*np.sin(theta),
                                   np.sin(phi)*np.sin(theta),
@@ -212,10 +226,6 @@ class Microscope:
                     P_2 = A[:,:,i,j]@self.E_N[k].conj()
                     P_t = (1/np.einsum('ij,ij->i',P_1,P_2))
                     P+= P_t.reshape(len(x))
-
-        plt.plot(P)
-        plt.show()
-        exit()
 
         for el in P[P.argsort()[-2:]]:
             if el not in (P[0],P[-1]):
@@ -368,6 +378,7 @@ class Microscope:
                 'Magnification' : str(self.Mag),
                 'Optical axis magnification' : self.opt_ax_Mag,
                 'Camera FoV [wl]' : self.cam_size,
+                'Voxel Size' : self.voxel_size,
                 'Wavelength' : self.wl,
                 'n_objective' : self.n_obj,
                 'n_substrate' : self.n_sub,
