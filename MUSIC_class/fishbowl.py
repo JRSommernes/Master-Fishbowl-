@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from misc_functions import dyadic_green
 
 class Fishbowl:
-    def __init__(self,N_sensors,radius,wl,n,mur,epsr,k_0,dipoles,M_timepoints):
+    def __init__(self,N_sensors,radius,wl,n,mur,epsr,k_0,dipoles,M_timepoints,offset):
         self.N_sensors = N_sensors
         self.radius = radius
         self.wl = wl
@@ -14,6 +14,7 @@ class Fishbowl:
         self.k_0 = k_0
         self.dipoles = dipoles
         self.M_timepoints = M_timepoints
+        self.offset = offset
 
         self.k_obj = self.k_0*self.n_obj
 
@@ -185,23 +186,25 @@ class Fishbowl:
 
         counter=0
         while 1:
+            if counter > 80:
+                exit()
             if self.check_resolvability():
                 self.old_dipoles = np.copy(self.dipoles)
                 self.E_stack_old = np.copy(self.E_stack)
                 x1 = self.dipoles[0,0]
                 x2 = self.dipoles[1,0]
                 diff = np.abs(x1-x2)
-                self.dipoles[0,0] = -diff/4
-                self.dipoles[1,0] = diff/4
+                self.dipoles[0,0] = -diff/4+self.offset
+                self.dipoles[1,0] = diff/4+self.offset
                 self.resolution_limit = diff/self.wl
             else:
                 if np.abs((self.dipoles[0,0]-self.old_dipoles[0,0])/self.old_dipoles[0,0]) < 0.01:
                     break
                 x1 = self.dipoles[0,0]
                 x2 = self.old_dipoles[0,0]
-                x = np.abs(x1+x2)/2
-                self.dipoles[0,0] = -x
-                self.dipoles[1,0] = x
+                x = np.abs(x1-self.offset+x2-self.offset)/2
+                self.dipoles[0,0] = -x+self.offset
+                self.dipoles[1,0] = x+self.offset
 
             self.data_acquisition()
             counter+=1
