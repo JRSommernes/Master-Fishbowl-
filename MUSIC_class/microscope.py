@@ -163,22 +163,26 @@ class Microscope:
     def create_image_stack(self):
         G = self.microscope_greens(self.dipoles)
 
-        try:
-            ph = np.load('phi.npy')
-            th = np.load('theta.npy')
-            if ph.shape[1] == th.shape[1] == self.M_timepoints:
-                phi = ph
-                theta = th
-            else:
-                phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
-                theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
-                np.save('phi',phi)
-                np.save('theta',theta)
-        except:
-            phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
-            theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
-            np.save('phi',phi)
-            np.save('theta',theta)
+        # try:
+        #     ph = np.load('phi.npy')
+        #     th = np.load('theta.npy')
+        #     if ph.shape[1] == th.shape[1] == self.M_timepoints:
+        #         phi = ph
+        #         theta = th
+        #     else:
+        #         phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+        #         theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+        #         np.save('phi',phi)
+        #         np.save('theta',theta)
+        # except:
+        #     phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+        #     theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+        #     np.save('phi',phi)
+        #     np.save('theta',theta)
+        ph = np.load('phi.npy')
+        th = np.load('theta.npy')
+        phi = ph[:,:self.M_timepoints]
+        theta = th[:,:self.M_timepoints]
 
         polarizations = np.array([np.cos(phi)*np.sin(theta),
                                   np.sin(phi)*np.sin(theta),
@@ -396,7 +400,7 @@ class Microscope:
 
         # os.mkdir(dir+'/{}_microscope'.format(counter))
 
-        with open(dir+"/{}_data_fishbowl.json".format(counter), 'w') as output:
+        with open(dir+"/{}_data_microscope.json".format(counter), 'w') as output:
             json.dump(data, output, indent=4)
 
         # P = self.P.reshape(self.P.shape[0],self.P.shape[1])

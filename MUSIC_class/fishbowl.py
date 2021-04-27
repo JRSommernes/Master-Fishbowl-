@@ -98,23 +98,26 @@ class Fishbowl:
     def data_acquisition(self):
         N_dipoles = len(self.dipoles)
 
-        try:
-            ph = np.load('phi.npy')
-            th = np.load('theta.npy')
-            if ph.shape[1] == th.shape[1] == self.M_timepoints:
-                phi = ph
-                theta = th
-            else:
-                phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
-                theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
-                np.save('phi',phi)
-                np.save('theta',theta)
-        except:
-            phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
-            theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
-            np.save('phi',phi)
-            np.save('theta',theta)
-
+        # try:
+        #     ph = np.load('phi.npy')
+        #     th = np.load('theta.npy')
+        #     if ph.shape[1] == th.shape[1] == self.M_timepoints:
+        #         phi = ph
+        #         theta = th
+        #     else:
+        #         phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+        #         theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+        #         np.save('phi',phi)
+        #         np.save('theta',theta)
+        # except:
+        #     phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+        #     theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+        #     np.save('phi',phi)
+        #     np.save('theta',theta)
+        ph = np.load('phi.npy')
+        th = np.load('theta.npy')
+        phi = ph[:,:self.M_timepoints]
+        theta = th[:,:self.M_timepoints]
 
         polarizations = np.array([np.cos(phi)*np.sin(theta),
                                   np.sin(phi)*np.sin(theta),
@@ -142,8 +145,9 @@ class Fishbowl:
 
         x1 = self.dipoles[0,0]
         x2 = self.dipoles[1,0]
+        print(x1/self.wl,x2)
 
-        x = np.linspace(x1,x2,20).reshape(-1,1)
+        x = np.linspace(1.1*x1,1.1*x2,200).reshape(-1,1)
         y = self.dipoles[0,1]*np.ones_like(x)
         z = self.dipoles[0,2]*np.ones_like(x)
         pos = np.append(x,np.append(y,z,axis=1),axis=1)
@@ -194,8 +198,8 @@ class Fishbowl:
                 x1 = self.dipoles[0,0]
                 x2 = self.dipoles[1,0]
                 diff = np.abs(x1-x2)
-                self.dipoles[0,0] = -diff/4+self.offset
-                self.dipoles[1,0] = diff/4+self.offset
+                self.dipoles[0,0] = self.offset-diff/4
+                self.dipoles[1,0] = self.offset+diff/4
                 self.resolution_limit = diff/self.wl
             else:
                 if np.abs((self.dipoles[0,0]-self.old_dipoles[0,0])/self.old_dipoles[0,0]) < 0.01:
@@ -309,6 +313,7 @@ class Fishbowl:
                     'epsr_objective' : self.epsr_obj,
                     'NA' : self.NA,
                     'Theta max' : self.theta_max,
+                    'Offset [wl]' : self.offset/self.wl,
                     'Dipole_positions [wl]' : (self.dipoles/self.wl).tolist()}
         except:
             data = {'Resolution limit [wl]' : self.resolution_limit,
@@ -320,6 +325,7 @@ class Fishbowl:
                     'Relative permeability' : self.mur_obj,
                     'epsr_objective' : self.epsr_obj,
                     'Theta max' : 0,
+                    'Offset [wl]' : self.offset/self.wl,
                     'Dipole_positions [wl]' : (self.dipoles/self.wl).tolist()}
 
         # os.mkdir(dir+'/{}'.format(t0))

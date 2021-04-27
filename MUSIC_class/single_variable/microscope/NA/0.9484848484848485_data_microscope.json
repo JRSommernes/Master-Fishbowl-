@@ -1,0 +1,34 @@
+{
+    "Resolution limit [wl]": 4.9676746129989624e-05,
+    "N_sensors": "100",
+    "N_timepoints": "100",
+    "Magnification": "60",
+    "Optical axis magnification": 2706.766917293233,
+    "Camera FoV [wl]": 0.8695652173913043,
+    "Voxel Size": 0.08695652173913043,
+    "Wavelength": 6.9e-07,
+    "n_objective": 1.33,
+    "n_substrate": 1.33,
+    "n_camera": 1,
+    "Relative permeability": 1,
+    "epsr_objective": 1.7689000000000001,
+    "epsr_substrate": 1.7689000000000001,
+    "epsr_camera": 1.0,
+    "f_obj": 0.0035466666666666667,
+    "f_cam": 0.05,
+    "NA": 0.9484848484848485,
+    "Theta max": 0.7939765184343205,
+    "Substrate interface [m]": -3e-08,
+    "Dipole_positions [wl]": [
+        [
+            -2.4838373064994812e-05,
+            0.0,
+            0.0
+        ],
+        [
+            2.4838373064994812e-05,
+            0.0,
+            0.0
+        ]
+    ]
+}
