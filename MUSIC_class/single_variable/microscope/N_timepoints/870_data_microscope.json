@@ -1,5 +1,5 @@
 {
-    "Resolution limit [wl]": 1.2225136742927136e-05,
+    "Resolution limit [wl]": 2.2668492794036864e-05,
     "N_sensors": "100",
     "N_timepoints": "870",
     "Magnification": "60",
@@ -14,19 +14,19 @@
     "epsr_objective": 1.7689000000000001,
     "epsr_substrate": 1.7689000000000001,
     "epsr_camera": 1.0,
-    "f_obj": 0.0035466666666666667,
-    "f_cam": 0.05,
+    "f_obj": 0.05,
+    "f_cam": 2.255639097744361,
     "NA": 1.2,
     "Theta max": 1.124972274337552,
     "Substrate interface [m]": -3e-08,
     "Dipole_positions [wl]": [
         [
-            -6.112568371463568e-06,
+            -1.1334246397018432e-05,
             0.0,
             0.0
         ],
         [
-            6.112568371463568e-06,
+            1.1334246397018432e-05,
             0.0,
             0.0
         ]

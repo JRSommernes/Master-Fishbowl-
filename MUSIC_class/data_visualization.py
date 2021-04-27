@@ -121,7 +121,7 @@ def plot_offset_fishbowl():
     plt.show()
 
 def plot_directs(dir,var,lab):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8,6))
     ax = fig.add_subplot(111)
     for j,d in enumerate(dir):
         lst = os.listdir(d)
@@ -136,11 +136,11 @@ def plot_directs(dir,var,lab):
 
         sort = res_lim[res_lim[:,0].argsort()]
 
-        ax.plot(sort[1:,0],sort[1:,1],label=lab[j])
+        ax.plot(sort[:,0],sort[:,1],label=lab[j])
 
     # plt.legend(loc='best')
     plt.ylabel('Resolution limit [wl]')
-    plt.xlabel('NA')
+    plt.xlabel('Working distance')
     plt.savefig('images/plots/{}.png'.format(var[0]),dpi=300,format='png')
     plt.show()
 
@@ -156,7 +156,7 @@ if __name__ == '__main__':
     # var = ['N_sensors','N_sensors']
     # lab = ['Semi Aperture, NA = 1.2', 'Full Sphere Aperture']
     #
-    dir = ['single_variable/microscope/NA']
-    var = ['NA']
+    dir = ['single_variable/microscope/f_obj']
+    var = ['f_obj']
     lab = ['Semi Aperture, NA = 1.2']
     plot_directs(dir,var,lab)
