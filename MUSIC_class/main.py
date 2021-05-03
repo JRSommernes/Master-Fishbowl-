@@ -9,57 +9,54 @@ if __name__ == '__main__':
     Mag = 60
 
     wl = 690e-9
-    freq = c/wl
+    for wl in np.linspace(420,690,10)*1e-9:
+        freq = c/wl
 
-    n_obj = 1.33
-    n_sub = n_obj
-    n_cam = 1
-    n = [n_obj,n_sub,n_cam]
+        n_obj = 1.33
+        n_sub = n_obj
+        n_cam = 1
+        n = [n_obj,n_sub,n_cam]
 
-    mur_obj = 1
-    mur_sub = 1
-    mur_cam = 1
-    mur = [mur_obj,mur_sub,mur_cam]
+        mur_obj = 1
+        mur_sub = 1
+        mur_cam = 1
+        mur = [mur_obj,mur_sub,mur_cam]
 
-    epsr_obj = n_obj**2/mur_obj
-    epsr_sub = n_sub**2/mur_sub
-    epsr_cam = n_cam**2/mur_cam
-    epsr = [epsr_obj,epsr_sub,epsr_cam]
+        epsr_obj = n_obj**2/mur_obj
+        epsr_sub = n_sub**2/mur_sub
+        epsr_cam = n_cam**2/mur_cam
+        epsr = [epsr_obj,epsr_sub,epsr_cam]
 
-    k_0 = 2*np.pi*freq*np.sqrt(epsilon_0*mu_0)
+        k_0 = 2*np.pi*freq*np.sqrt(epsilon_0*mu_0)
 
-    z_Interface_sub = -30e-9
+        z_Interface_sub = -30e-9
 
-    FoV = 10
-    NA = 1.2
-    camera_size = 6
-    voxel_size = 60e-9/690e-9
+        FoV = 10
+        NA = 1.2
+        camera_size = 6
+        voxel_size = 60e-9/690e-9
 
-    M_timepoints = 100
-    N_sensors = 100
-    NA = 1.2
-    f_obj = 5e-2
-    f_cam = f_obj*(Mag*n_cam/n_obj)
-    f = [f_obj,f_cam]
-    off = 0
-
-    dir = 'single_variable/microscope/f_obj'
-    for f_obj in np.linspace(0.1,0.5,5):
+        M_timepoints = 100
+        N_sensors = 100
+        NA = 1.2
+        f_obj = 5e-2
         f_cam = f_obj*(Mag*n_cam/n_obj)
         f = [f_obj,f_cam]
+        off = 0
 
+        dir = 'single_variable/microscope/wl'
+        dipoles = np.array([[-0.0046*wl,0*wl,0*wl],[0.0046*wl,0*wl,0*wl]])
 
-        dipoles = np.array([[-0.0046*wl+off,0*wl,0*wl],[0.0046*wl+off,0*wl,0*wl]])
-
-        if os.path.isfile(dir+'/{}_data_microscope.json'.format(f_obj)):
+        if os.path.isfile(dir+'/{}_data_microscope.json'.format(wl/1e-9)):
             continue
-        print(f_obj)
+        print(wl/1e-9)
 
         mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles,voxel_size,M_timepoints)
         mic.create_image_stack()
         mic.find_resolution_limit()
         print(mic.resolution_limit)
-        mic.save_info(dir,f_obj)
+        mic.save_info(dir,wl/1e-9)
+        # exit()
 
         # FoV = 0.01
         # fib = Fishbowl(N_sensors,f_obj,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints,off)

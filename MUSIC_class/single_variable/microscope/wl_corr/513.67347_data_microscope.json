@@ -1,12 +1,12 @@
 {
-    "Resolution limit [wl]": 3.09539794921875e-05,
+    "Resolution limit [wl]": 3.789792390307412e-05,
     "N_sensors": "100",
     "N_timepoints": "100",
     "Magnification": "60",
     "Optical axis magnification": 2706.766917293233,
     "Camera FoV [wl]": 0.8695652173913043,
     "Voxel Size": 0.08695652173913043,
-    "Wavelength": 4.2e-07,
+    "Wavelength": 5.136734693877551e-07,
     "n_objective": 1.33,
     "n_substrate": 1.33,
     "n_camera": 1,
@@ -21,12 +21,12 @@
     "Substrate interface [m]": -3e-08,
     "Dipole_positions [wl]": [
         [
-            -1.547698974609375e-05,
+            -1.894896195153706e-05,
             0.0,
             0.0
         ],
         [
-            1.547698974609375e-05,
+            1.894896195153706e-05,
             0.0,
             0.0
         ]
