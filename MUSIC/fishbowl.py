@@ -1,249 +1,334 @@
 import numpy as np
-from misc_functions import *
-import torch
-import torch.nn as nn
+import json
+import matplotlib.pyplot as plt
+from misc_functions import dyadic_green
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+class Fishbowl:
+    def __init__(self,N_sensors,radius,wl,n,mur,epsr,k_0,dipoles,M_timepoints,offset):
+        self.N_sensors = N_sensors
+        self.radius = radius
+        self.wl = wl
+        self.n_obj = n
+        self.mur_obj = mur
+        self.epsr_obj = epsr
+        self.k_0 = k_0
+        self.dipoles = dipoles
+        self.M_timepoints = M_timepoints
+        self.offset = offset
 
-class MLP(nn.Module):
-    def __init__(self,in_size):
-        super(MLP, self).__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(in_size, 512),
-            nn.Linear(512, 128),
-            nn.Linear(128,16),
-            nn.Linear(16,2)
-        )
-    def forward(self, x):
-        out = self.mlp(x)
-        return out
+        self.k_obj = self.k_0*self.n_obj
 
-def dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,grid_size,k_0):
-    I = np.identity(3)
+    def make_sensors(self):
+        sensors = np.zeros((self.N_sensors,3))
+        phi = np.pi * (3. - np.sqrt(5.))  # golden angle in radians
 
-    shape_1 = np.append(N_sensors,np.ones(len(xx.shape),dtype=int))
-    shape_2 = np.append(1,xx.shape)
+        for i in range(self.N_sensors):
+            y = (1 - (i / float(self.N_sensors - 1)) * 2)  # y goes from 1 to -1
+            radius = np.sqrt(1 - y * y)  # radius at y
 
-    r_x = sensors[0].reshape(shape_1)-xx.reshape(shape_2)
-    r_y = sensors[1].reshape(shape_1)-yy.reshape(shape_2)
-    r_z = sensors[2].reshape(shape_1)-zz*np.ones(shape_2)
-    r_p = np.array((r_x,r_y,r_z))
+            theta = phi * i  # golden angle increment
 
-    R = np.sqrt(np.sum((r_p)**2,axis=0))
-    R_hat = ((r_p)/R)
-    RR_hat = np.einsum('iklm,jklm->ijklm',R_hat,R_hat)
+            x = np.cos(theta) * radius
+            z = np.sin(theta) * radius
 
-    g_R = np.exp(1j*k_0*R)/(4*np.pi*R)
-    expr_1 = (3/(k_0**2*R**2)-3j/(k_0*R)-1)*g_R
-    expr_1 = np.broadcast_to(expr_1,RR_hat.shape)
+            x,y,z = x*self.radius, y*self.radius, z*self.radius
 
-    expr_2 = (1+1j/(k_0*R)-1/(k_0**2*R**2))*g_R
-    expr_2 = np.broadcast_to(expr_2,RR_hat.shape)
+            sensors[i] = [x,y,z]
+        self.sensors = np.ascontiguousarray(sensors.T)
 
-    I = np.broadcast_to(I,(N_sensors,grid_size,grid_size,3,3))
-    I = I.transpose(3,4,0,1,2)
+    def limited_aperture_sensors(self,NA):
+        self.NA = NA
+        self.theta_max = np.arcsin(self.NA/self.n_obj)
 
-    G = (expr_1*RR_hat + expr_2*I).transpose((2,0,1,3,4))
+        sphere_area = 4*np.pi*self.radius**2
+        cap_area = 2*np.pi*self.radius**2*(1-np.cos(self.theta_max))
+        mult = sphere_area/cap_area
+        N_sensors = self.N_sensors
+        self.N_sensors = int(self.N_sensors*mult)
 
-    return G
+        counter = 0
+        while 1:
+            self.make_sensors()
+            counter+=1
+            theta = np.arctan2(np.sqrt(self.sensors[0]**2+self.sensors[1]**2),self.sensors[2])
+            if counter > 100:
+                break
+            elif len(np.where(theta<=self.theta_max)[0]) > N_sensors:
+                self.N_sensors -= 1
+            elif len(np.where(theta<=self.theta_max)[0]) < N_sensors:
+                self.N_sensors += 1
+            else:
+                break
 
-def correlation_space(E_field):
-    S = E_field@np.conjugate(E_field).T
+        self.N_sensors = len(np.where(theta<=self.theta_max)[0])
 
-    eigvals,eigvecs = np.linalg.eig(S)
+        idx = np.where(theta<=self.theta_max)[0]
+        self.sensors = self.sensors[:,idx]
+        # self.N_sensors = N_sensors
 
-    dist = np.sqrt(eigvals.real**2 + eigvals.imag**2)
+    def dyadic_green(self,dipole_pos):
+        r_p = self.sensors-dipole_pos.reshape(3,1)
 
-    noice_idx = np.where(dist<1)[0]
-    N = len(noice_idx)
-    D = len(E_field)-N
-    # print(dist)
-    #
-    # E_N = eigvecs[:,noice_idx]
+        R = np.sqrt(np.sum((r_p)**2,axis=0))
+        R_hat = ((r_p)/R)
 
-    return np.ascontiguousarray(eigvecs)
+        RR_hat = np.einsum('ik,jk->ijk',R_hat,R_hat)
 
-def fishbowl(E_sensors,sensors,wl,k_0,N_recon,FoV,dipoles):
-    wl = 690e-9
-    N_sensors = sensors.shape[1]
+        g_R = np.exp(1j*self.k_0*R)/(4*np.pi*R)
+        expr_1 = (3/(self.k_0**2*R**2)-3j/(self.k_0*R)-1)*g_R
+        expr_2 = (1+1j/(self.k_0*R)-1/(self.k_0**2*R**2))*g_R
 
-    model = MLP(N_sensors*3*3*2*2).to(device)
-    optimizer = torch.optim.Adam(model.parameters())
-    criterion = nn.CrossEntropyLoss()
+        I = np.identity(3)
+        G = (expr_1*RR_hat + expr_2*I.reshape(3,3,1)).T
 
-    E_x = E_sensors[0::3]
-    E_y = E_sensors[1::3]
-    E_z = E_sensors[2::3]
+        return G
 
-    E_sensors = np.append(E_x,np.append(E_y,E_z,axis=0),axis=0)
+    #Slower if njit because of dyadic green dependecy
+    def sensor_field(self,polarizations):
+        E_tot = np.zeros((3*self.N_sensors,polarizations.shape[2]),dtype=np.complex128)
 
-    theta = np.arctan2(np.sqrt(sensors[0]**2+sensors[1]**2),sensors[2])
-    phi = np.arctan2(sensors[1],sensors[0])
+        for i in range(len(self.dipoles)):
+            G = self.dyadic_green(self.dipoles[i]).transpose(1,0,2)
+            G = G.reshape(3*self.N_sensors,3)
+            E_tot += G@polarizations[i]
 
-    I_x = np.abs(E_x)**2
-    I_y = np.abs(E_y)**2
-    I_z = np.abs(E_z)**2
-    I = I_x+I_y+I_z
+        self.E_stack = E_tot
 
-    theta = np.pi/2-theta
+    #Slower if njit because dependencies
+    def data_acquisition(self):
+        N_dipoles = len(self.dipoles)
 
-    I_theta = I_z
-    I_phi = I_x+I_y
+        # try:
+        #     ph = np.load('phi.npy')
+        #     th = np.load('theta.npy')
+        #     if ph.shape[1] == th.shape[1] == self.M_timepoints:
+        #         phi = ph
+        #         theta = th
+        #     else:
+        #         phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+        #         theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+        #         np.save('phi',phi)
+        #         np.save('theta',theta)
+        # except:
+        #     phi = np.random.uniform(0,2*np.pi,(N_dipoles,self.M_timepoints))
+        #     theta = np.random.uniform(-np.pi/2,np.pi/2,(N_dipoles,self.M_timepoints))
+        #     np.save('phi',phi)
+        #     np.save('theta',theta)
+        ph = np.load('phi.npy')
+        th = np.load('theta.npy')
+        phi = ph[:,:self.M_timepoints]
+        theta = th[:,:self.M_timepoints]
 
-    # plot_sensor_field(sensors,I_x[:,0])
-    # plot_sensor_field(sensors,I_y[:,0])
-    # plot_sensor_field(sensors,I_z[:,0])
-    # plot_sensor_field(sensors,I_x[:,0]+I_y[:,0]+I_z[:,0])
+        polarizations = np.array([np.cos(phi)*np.sin(theta),
+                                  np.sin(phi)*np.sin(theta),
+                                  np.cos(theta)]).swapaxes(0,1)
 
-    pos = np.array([[0,0,0]])
-    A = dyadic_green(sensors,pos,k_0)
+        self.sensor_field(polarizations)
 
-    T = (A.T@I).reshape(3*3,1000)
-    print(np.linalg.matrix_rank(T.T@T))
+    def find_noise_space(self):
+        S = self.E_stack@np.conjugate(self.E_stack).T
 
-    N_theta = correlation_space(I_theta)
-    N_phi = correlation_space(I_phi)
-    exit()
+        eigvals,eigvecs = np.linalg.eig(S)
+
+        dist = np.sqrt(eigvals.real**2 + eigvals.imag**2)
+
+        noice_idx = np.where(dist<1)[0]
+        N = len(noice_idx)
+        D = len(self.E_stack)-N
+
+        E_N = eigvecs[:,noice_idx]
+
+        self.E_N = np.ascontiguousarray(E_N)
+
+    def check_resolvability(self):
+        self.find_noise_space()
+
+        x1 = self.dipoles[0,0]
+        x2 = self.dipoles[1,0]
+        print(x1/self.wl,x2)
+
+        x = np.linspace(1.1*x1,1.1*x2,200).reshape(-1,1)
+        y = self.dipoles[0,1]*np.ones_like(x)
+        z = self.dipoles[0,2]*np.ones_like(x)
+        pos = np.append(x,np.append(y,z,axis=1),axis=1)
 
 
-    x = np.linspace(FoV[0,0],FoV[0,1],N_recon)
-    y = np.linspace(FoV[1,0],FoV[1,1],N_recon)
-    z = np.linspace(FoV[2,0],FoV[2,1],N_recon)
+        A = np.zeros((len(pos),self.N_sensors,3,3),dtype=np.complex128)
+        for i in range(len(pos)):
+            A[i] = self.dyadic_green(pos[i])
 
-    labels = np.zeros((N_recon,N_recon,N_recon),dtype=np.uint8)
+        A = A.transpose(2,1,3,0)
+        A = A.reshape(3*self.N_sensors,3,len(pos)).T
 
-    for k,tmp in enumerate(dipoles):
-        xyz = np.array([x,y,z])
-        dist = np.abs(xyz-tmp.reshape(3,1))
-        x_dist = dist[0]
-        y_dist = dist[1]
-        z_dist = dist[2]
+        a,b,c = A.shape
 
-        x_pos = np.where(x_dist==np.amin(x_dist))[0][0]
-        y_pos = np.where(y_dist==np.amin(y_dist))[0][0]
-        z_pos = np.where(z_dist==np.amin(z_dist))[0][0]
+        A = A.reshape(-1, A.shape[-1])
+        B =  self.E_N
 
-        labels[x_pos,y_pos,z_pos] = 1
+        P_1 = np.conjugate(A)@B
+        P_2 = A@np.conjugate(B)
 
-    model.train()
-    losses = []
-    xx,yy = np.meshgrid(x,y)
-    for i,zz in enumerate(z):
-        loadbar(i,len(z))
-        labels_plane = labels[:,:,i]
-        labels_plane = labels_plane.reshape(1,N_recon**2)
+        P_1 = P_1.reshape(a,b,P_1.shape[-1])
+        P_2 = P_2.reshape(a,b,P_2.shape[-1])
 
-        N_samples = np.random.randint(1,N_recon**2//100)
-        sample_points = np.random.randint(0,N_recon**2,N_samples)
+        P = (1/np.einsum('ijk,ijk->ij',P_1,P_2)).T
+        P = np.sum(P,axis=0)
 
-        if len(np.unique(labels_plane)) == 1:
-            sample_points = np.sort(sample_points)
-
+        for el in P[P.argsort()[-2:]]:
+            if el not in (P[0],P[-1]):
+                return False
+        peak = np.min((P[0],P[-1]))
+        min = np.min(P)
+        if min/peak <= 0.735:
+            return True
         else:
-            dipole_pos = np.nonzero(labels_plane)[1]
-            sample_points = np.unique(np.append(sample_points,dipole_pos))
-
-        sample_labels = labels_plane[:,sample_points]
-        sample_size = len(sample_points)
-
-        idx = np.where(sample_labels==1)[1]
-
-        tmp_1 = np.ones(sample_size)
-        tmp_2 = np.zeros(sample_size)
-        tmp_1[idx] = 0
-        tmp_2[idx] = 1
-        tmp = np.array([tmp_1,tmp_2]).T
-
-        G = dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,N_recon,k_0)
-        G = G.transpose((3,4,1,2,0)).reshape(N_recon**2,3,3,N_sensors)
-        G = G[sample_points]
-
-        T_1 = (G@N_theta).reshape(sample_size,3**2*N_sensors)
-        T_2 = (G@N_phi).reshape(sample_size,3**2*N_sensors)
-        T = np.append(T_1,T_2,axis=1)
-
-        T_r = T.real
-        T_i = T.imag
-        T = np.append(T_r,T_i,axis=1).astype(np.float32)
-
-        output = model(torch.from_numpy(T))
-        y = torch.from_numpy(sample_labels.flatten()).long()
+            return False
 
 
+    def find_resolution_limit(self):
+        self.old_dipoles = np.copy(self.dipoles)*2
 
-        loss = criterion(output, y)
-        loss.backward()
-        losses.append(loss.item())
+        counter=0
+        while 1:
+            if counter > 80:
+                exit()
+            if self.check_resolvability():
+                self.old_dipoles = np.copy(self.dipoles)
+                self.E_stack_old = np.copy(self.E_stack)
+                x1 = self.dipoles[0,0]
+                x2 = self.dipoles[1,0]
+                diff = np.abs(x1-x2)
+                self.dipoles[0,0] = self.offset-diff/4
+                self.dipoles[1,0] = self.offset+diff/4
+                self.resolution_limit = diff/self.wl
+            else:
+                if np.abs((self.dipoles[0,0]-self.old_dipoles[0,0])/self.old_dipoles[0,0]) < 0.01:
+                    break
+                x1 = self.dipoles[0,0]
+                x2 = self.old_dipoles[0,0]
+                x = np.abs(x1-self.offset+x2-self.offset)/2
+                self.dipoles[0,0] = -x+self.offset
+                self.dipoles[1,0] = x+self.offset
 
-        optimizer.step()
+            self.data_acquisition()
+            counter+=1
+            print(counter)
 
+        self.dipoles = np.copy(self.old_dipoles)
+        self.E_stack = np.copy(self.E_stack_old)
 
-    tmp = [1000, 3080, 4000, 5120, 7120, 10000]
-    G = dyadic_green_FoV_2D(sensors,xx,yy,30,N_sensors,N_recon,k_0)
-    G = G.transpose((3,4,1,2,0)).reshape(N_recon**2,3,3,N_sensors)
-    G = G[tmp]
+    def dyadic_green_2D(self,xx,yy,zz,grid_size):
+        I = np.identity(3)
+        shape_1 = np.append(self.N_sensors,np.ones(len(xx.shape),dtype=int))
+        shape_2 = np.append(1,xx.shape)
 
-    T_1 = (G@N_theta).reshape(len(tmp),3**2*N_sensors)
-    T_2 = (G@N_phi).reshape(len(tmp),3**2*N_sensors)
-    T = np.append(T_1,T_2,axis=1)
+        r_x = self.sensors[0].reshape(shape_1)-xx.reshape(shape_2)
+        r_y = self.sensors[1].reshape(shape_1)-yy.reshape(shape_2)
+        r_z = self.sensors[2].reshape(shape_1)-zz*np.ones(shape_2)
+        r_p = np.array((r_x,r_y,r_z))
 
-    T_r = T.real
-    T_i = T.imag
-    T = np.append(T_r,T_i,axis=1).astype(np.float32)
-    test = model(torch.from_numpy(T))
+        R = np.sqrt(np.sum((r_p)**2,axis=0))
+        R_hat = ((r_p)/R)
+        RR_hat = np.einsum('iklm,jklm->ijklm',R_hat,R_hat)
 
-    print(test)
+        g_R = np.exp(1j*self.k_0*R)/(4*np.pi*R)
+        expr_1 = (3/(self.k_0**2*R**2)-3j/(self.k_0*R)-1)*g_R
+        expr_1 = np.broadcast_to(expr_1,RR_hat.shape)
 
-    exit()
+        expr_2 = (1+1j/(self.k_0*R)-1/(self.k_0**2*R**2))*g_R
+        expr_2 = np.broadcast_to(expr_2,RR_hat.shape)
 
-        # if len(np.unique(labels_plane)) == 1:
-        #     if np.random.randint(0,10) < 7:
-        #         continue
-        #
-        # G = dyadic_green_FoV_2D(sensors,xx,yy,zz,N_sensors,N_recon,k_0)
-        # G = G.transpose((3,4,1,2,0))
-        #
-        # T_1 = (G@N_theta).reshape(N_recon**2,3**2*N_sensors)
-        # T_2 = (G@N_phi).reshape(N_recon**2,3**2*N_sensors)
-        # T = np.append(T_1,T_2,axis=1)
-        #
-        # batch_size = 256
-        # N_batch = int(np.ceil(T.shape[0]/batch_size))
-        #
-        # print(T.shape,labels_plane.shape)
-        # exit()
-        #
-        # for j in range(N_batch):
-        #     batch = T[j*batch_size:(j+1)*batch_size]
+        I = np.broadcast_to(I,(self.N_sensors,grid_size,grid_size,3,3))
+        I = I.transpose(3,4,0,1,2)
 
+        G = (expr_1*RR_hat + expr_2*I).transpose((2,0,1,3,4))
 
-    exit()
+        return G
 
+    def P_calc_2D(self,A_fov,N_recon):
+        self.P = np.zeros((N_recon,N_recon),dtype = np.complex128)
+        a,b,c,d = A_fov.shape
 
+        A = A_fov.reshape(-1, A_fov.shape[-1])
+        B =  self.E_N.reshape(-1, self.E_N.shape[-1])
 
-    # print(T.shape)
-    #
-    # exit()
+        P_fov_1 = np.conjugate(A)@B
+        P_fov_2 = A@np.conjugate(B)
 
-    # print(A.shape,B.shape)
-    # print(T_1.shape)
-    # exit()
+        P_fov_1 = P_fov_1.reshape(a,b,c,P_fov_1.shape[-1])
+        P_fov_2 = P_fov_2.reshape(a,b,c,P_fov_2.shape[-1])
 
-    # return T
+        P_fov_plane = (1/np.einsum('ijkl,ijkl->ijk',P_fov_1,P_fov_2)).T
+        self.P += np.sum(P_fov_plane,axis=0)
 
+    def P_estimation(self,N_recon,FoV):
+        self.find_noise_space()
+        x = y = np.linspace(-FoV/2,FoV/2,N_recon)*self.wl
+        xx,yy = np.meshgrid(x,y)
+        z = [0]
 
-    # Simple P calulation
-    # pos = np.array([[0,0,0]])
-    # G = dyadic_green(sensors,pos,k_0)
-    #
-    # A = G.reshape(-1, G.shape[-1])[0::3]
-    # B =  N_theta.reshape(-1, N_theta.shape[-1])
-    #
-    # P_1 = np.conjugate(A.T)@B
-    # P_2 = A.T@np.conjugate(B)
-    #
-    # P = (1/np.einsum('ij,ij->i',P_1,P_2)).T
-    # P = np.sum(P,axis=0)
-    #
-    # print(P)
-    # exit()
+        A_fov_plane = self.dyadic_green_2D(xx,yy,z,N_recon).transpose(1,0,2,3,4)
+        # A_fov_plane = np.ascontiguousarray((A_fov_plane.reshape(3,self.N_sensors,3,N_recon,N_recon)).T)
+        A_fov_plane = np.ascontiguousarray(A_fov_plane.reshape(3*self.N_sensors,3,N_recon,N_recon).T)
+
+        self.P_calc_2D(A_fov_plane,N_recon)
+
+    def plot_aperture_field(self):
+        th = np.linspace(0,self.theta_max,1000)
+        ph = np.linspace(0,2*np.pi,1000)
+        tt,pp = np.meshgrid(th,ph)
+        xx = self.radius*np.cos(pp)*np.sin(tt)
+        yy = self.radius*np.sin(pp)*np.sin(tt)
+        zz = self.radius*np.cos(tt)
+
+        sensors = np.array((xx,yy,zz)).reshape(3,-1)
+
+        im = np.zeros((len(th)*len(ph),3,3),dtype=np.complex128)
+        for k in range(len(self.dipoles)):
+            im += dyadic_green(sensors,self.dipoles[k],self.k_0)
+        im = im.reshape(len(th),len(ph),3,3)
+
+        for i in range(3):
+            for j in range(3):
+                fig = plt.figure()
+                ax1 = fig.add_subplot(121)
+                ax2 = fig.add_subplot(122)
+                ax1.imshow(im[:,:,i,j].real)
+                ax2.imshow(im[:,:,i,j].imag)
+                ax1.title.set_text('Real values')
+                ax2.title.set_text('Imag values')
+                plt.show()
+
+    def save_info(self,dir,counter):
+        # t0 = round(time())
+
+        try:
+            data = {'Resolution limit [wl]' : self.resolution_limit,
+                    'N_sensors' : str(self.N_sensors),
+                    'Sensor radius' : self.radius,
+                    'N_timepoints' : str(self.M_timepoints),
+                    'Wavelength' : self.wl,
+                    'n_objective' : self.n_obj,
+                    'Relative permeability' : self.mur_obj,
+                    'epsr_objective' : self.epsr_obj,
+                    'NA' : self.NA,
+                    'Theta max' : self.theta_max,
+                    'Offset [wl]' : self.offset/self.wl,
+                    'Dipole_positions [wl]' : (self.dipoles/self.wl).tolist()}
+        except:
+            data = {'Resolution limit [wl]' : self.resolution_limit,
+                    'N_sensors' : str(self.N_sensors),
+                    'Sensor radius' : self.radius,
+                    'N_timepoints' : str(self.M_timepoints),
+                    'Wavelength' : self.wl,
+                    'n_objective' : self.n_obj,
+                    'Relative permeability' : self.mur_obj,
+                    'epsr_objective' : self.epsr_obj,
+                    'Theta max' : 0,
+                    'Offset [wl]' : self.offset/self.wl,
+                    'Dipole_positions [wl]' : (self.dipoles/self.wl).tolist()}
+
+        # os.mkdir(dir+'/{}'.format(t0))
+
+        with open(dir+"/{}_data_fishbowl.json".format(counter), 'w') as output:
+            json.dump(data, output, indent=4)

@@ -1,86 +1,84 @@
 import numpy as np
-try:
-    import cupy as cp
-except:
-    pass
+from microscope import Microscope
+from fishbowl import Fishbowl
+from scipy.constants import epsilon_0, mu_0, c
+import json, os
 from misc_functions import *
-from imaging import *
-from MUSIC import *
-from microscope_data import *
-import json
-import os
 
 if __name__ == '__main__':
-    eps_0 = 8.8541878128e-12
-    mu_0 = 4*np.pi*10**-7
-    c_0 = 1/np.sqrt(eps_0*mu_0)
+    Mag = 60
 
     wl = 690e-9
-    freq = c_0/wl
-    k_0 = 2*np.pi*freq*np.sqrt(eps_0*mu_0)
-    omega = 2*np.pi*freq
+    for wl in np.linspace(420,690,10)*1e-9:
+        freq = c/wl
 
-    n0 = 1
-    n1 = 1.33
+        n_obj = 1.33
+        n_sub = n_obj
+        n_cam = 1
+        n = [n_obj,n_sub,n_cam]
 
-    # sensor_radius = 100*wl
-    sensor_radius = 16e-2
+        mur_obj = 1
+        mur_sub = 1
+        mur_cam = 1
+        mur = [mur_obj,mur_sub,mur_cam]
 
-    # dipoles = np.array([[1*wl, 0*wl, 0*wl]])
-    # dipoles = np.array([[0.4*wl,0.4*wl,0.4*wl],[-0.4*wl,0.4*wl,0.4*wl]])
-    dipoles = np.array([[-0.03*wl,0*wl,0*wl],[0.03*wl,0*wl,0*wl]])
-    # dipoles = np.array([[0*wl,0.05*wl,0*wl],[0*wl,-0.05*wl,0*wl]])
+        epsr_obj = n_obj**2/mur_obj
+        epsr_sub = n_sub**2/mur_sub
+        epsr_cam = n_cam**2/mur_cam
+        epsr = [epsr_obj,epsr_sub,epsr_cam]
 
+        k_0 = 2*np.pi*freq*np.sqrt(epsilon_0*mu_0)
 
-    FoV = np.array([[-0.2*wl,0.2*wl],
-                    [-0.2*wl,0.2*wl],
-                    [-0.2*wl,0.2*wl]])
-    # FoV = np.array([[-1.5*wl,1.5*wl],
-    #                 [-1.5*wl,1.5*wl],
-    #                 [-1.5*wl,1.5*wl]])
+        z_Interface_sub = -30e-9
 
-    N_sensors = 25
-    N_emitters = 100
-    M_inputs = 100
-    N_recon = 101
+        FoV = 10
+        NA = 1.2
+        camera_size = 6
+        voxel_size = 60e-9/690e-9
 
-    # dipoles = np.array([[0.8*wl,0*wl,0*wl],
-    #                     [-0.8*wl,0*wl,0*wl],
-    #                     [0*wl,0.8*wl,0*wl],
-    #                     [0.8*wl,0*wl,0.8*wl],
-    #                     [-0.8*wl,0*wl,0.8*wl],
-    #                     [0*wl,0.8*wl,0.8*wl],
-    #                     [0.8*wl,0*wl,-0.8*wl],
-    #                     [-0.8*wl,0*wl,-0.8*wl],
-    #                     [0*wl,0.8*wl,-0.8*wl]])
+        M_timepoints = 100
+        N_sensors = 100
+        NA = 1.2
+        f_obj = 5e-2
+        f_cam = f_obj*(Mag*n_cam/n_obj)
+        f = [f_obj,f_cam]
+        off = 0
 
-    # dipoles = np.random.uniform(-1.5*wl,1.5*wl,(5,3))
+        dir = 'single_variable/microscope/wl'
+        dipoles = np.array([[-0.0046*wl,0*wl,0*wl],[0.0046*wl,0*wl,0*wl]])
 
-    E_sensors,sensors = data_acquisition(dipoles,wl,M_inputs,sensor_radius,N_sensors,k_0)
-    P = P_estimation(E_sensors,sensors,N_recon,FoV,k_0,target='cpu')
-    # plot_sensor_field(sensors,E_sensors)
+        if os.path.isfile(dir+'/{}_data_microscope.json'.format(wl/1e-9)):
+            continue
+        print(wl/1e-9)
 
+        mic = Microscope(Mag,N_sensors,wl,n,mur,epsr,k_0,f,NA,z_Interface_sub,dipoles,voxel_size,M_timepoints)
+        mic.create_image_stack()
+        mic.find_resolution_limit()
+        print(mic.resolution_limit)
+        mic.save_info(dir,wl/1e-9)
+        # exit()
 
-    # Mag = 60
-    # N_sensors = 61**2
-    # microscope_greens(dipoles,wl,M_inputs,N_sensors,k_0,Mag)
+        # FoV = 0.01
+        # fib = Fishbowl(N_sensors,f_obj,wl,n_obj,mur_obj,epsr_obj,k_0,dipoles,M_timepoints,off)
+        # fib.make_sensors()
+        # # fib.limited_aperture_sensors(NA)
+        # fib.data_acquisition()
+        # fib.find_resolution_limit()
+        # print(fib.resolution_limit)
+        # fib.save_info(dir,off/wl)
 
-    plt.imshow(np.abs(P[:,:,0]))
-    plt.show()
-
-    exit()
-
-    current = '9_dipoles'
-    dir = 'images'
-
-    data = {'Num_dipoles' : len(dipoles),
-            'N_recon' : N_recon,
-            'N_sensors' : N_sensors,
-            'M_orientations' : M_inputs,
-            'FoV' : FoV.tolist(),
-            'Dipole_positions' : dipoles.tolist()}
-
-    with open(dir+'/'+current+'/'+"test.json", 'w') as output:
-        json.dump(data, output, indent=4)
-
-    save_stack(P,dir+'/'+current+'/'+'image')
+        # fib.P_estimation(101,FoV)
+        # fig, ax = plt.subplots()
+        # x = np.round(np.linspace(-FoV/2,FoV/2,6),5)
+        # xx = np.linspace(0,100,6)
+        # print(x)
+        # plt.imshow(np.abs(fib.P))
+        # ax.set_xticks(xx)
+        # ax.set_xticklabels(x)
+        # ax.set_yticks(xx)
+        # ax.set_yticklabels(x)
+        # plt.xlabel('x-position [wl]')
+        # plt.ylabel('y-position [wl]')
+        # plt.colorbar()
+        # plt.savefig('images/plots/MUSIC_reconstruction_log_wl420.png',dpi=300,format='png')
+        # plt.show()
